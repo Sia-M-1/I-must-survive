@@ -644,9 +644,6 @@ class Game:
 
         credits_text = """Создатели игры: Леденцы из барбариски
 Вдохновлено историей колледжа Винкс
-Музыка: Mystery Halloween
-Звуки: Freesound.org
-
 © 2026 Все права защищены"""
 
         credits_label = tk.Label(credits_frame,
