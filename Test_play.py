@@ -28,18 +28,207 @@ def split_long_text(text, max_length=20):
     result += current_line.strip()
     return result
 
-# Временная заглушка для механизма пятнашков
-def wire_puzzle_stub(parent, on_complete):
-    stub_window = tk.Toplevel(parent)
-    stub_window.title("Игровой механизм отключен")
-    stub_window.geometry("400x200")
-    stub_window.configure(bg='#2a2a2a')
+# Класс для игры в пятнашки (серверная комната)
+# Класс для игры в пятнашки (серверная комната)
+class WirePuzzle:
+    def __init__(self, parent, on_complete):
+        from random import shuffle
+        
+        self.parent = parent
+        self.on_complete = on_complete
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # ПРОВЕРКА: выводим все PNG файлы в директории
+        print("\n=== Поиск файлов для пятнашков ===")
+        print(f"Директория: {self.current_dir}")
+        for file in os.listdir(self.current_dir):
+            if file.lower().endswith('.png'):
+                print(f"Найден PNG: {file}")
+        print("================================\n")
 
-    label = tk.Label(stub_window, text="Этот игровой элемент временно отключен.", font=global_fonts['small'], bg='#2a2a2a', fg='white')
-    label.pack(pady=20)
+        # Создаем окно для пятнашков
+        self.puzzle_window = tk.Toplevel(parent)
+        self.puzzle_window.title("🔧 Серверная - Ремонт проводов")
+        self.puzzle_window.geometry("350x450")
+        self.puzzle_window.configure(bg='#1a2a3a')
+        self.puzzle_window.resizable(False, False)
+        
+        # Используем шрифты из глобальной переменной
+        try:
+            self.title_font = global_fonts['large']
+            self.text_font = global_fonts['small']
+        except:
+            # Если шрифты не определены, создаем свои
+            from tkinter.font import Font
+            self.title_font = Font(family="Arial", size=14, weight="bold")
+            self.text_font = Font(family="Arial", size=12, weight="bold")
+        
+        # Заголовок
+        title_frame = tk.Frame(self.puzzle_window, bg='#2a3a4a', height=50)
+        title_frame.pack(fill="x")
+        tk.Label(title_frame, text="🔧 СОЕДИНИ ПРОВОДА 🔧", 
+                font=self.title_font, bg='#2a3a4a', fg='#ffd700').pack(pady=10)
+        
+        # Описание
+        desc_label = tk.Label(self.puzzle_window, 
+                             text="Собери картинку, чтобы восстановить питание серверной",
+                             font=self.text_font, bg='#1a2a3a', fg='white', wraplength=300)
+        desc_label.pack(pady=5)
+        
+        # Проверяем наличие файлов
+        self.check_image_files()
+        
+        # Список изображений
+        image_files = ['img1.png', 'img3.png', 'img4.png', 'img5.png', 
+                      'img6.png', 'img7.png', 'img8.png', 'img9.png']
+        
+        # Загружаем изображения
+        self.images = []
+        self.image_paths = []
+        
+        for filename in image_files:
+            img_path = os.path.join(self.current_dir, filename)
+            self.image_paths.append(img_path)
+            print(f"Проверяем файл: {img_path}")
+            
+            try:
+                if os.path.exists(img_path):
+                    print(f"Файл найден: {filename}")
+                    pil_image = Image.open(img_path)
+                    # Изменяем размер до 90x90 для лучшей видимости
+                    pil_image = pil_image.resize((90, 90), Image.Resampling.LANCZOS)
+                    photo = ImageTk.PhotoImage(pil_image)
+                    self.images.append(photo)
+                else:
+                    print(f"Файл НЕ найден: {filename}")
+                    # Создаем заглушку с именем файла
+                    self.images.append(self.create_placeholder(filename))
+            except Exception as e:
+                print(f"Ошибка загрузки {filename}: {e}")
+                self.images.append(self.create_placeholder(filename))
+        
+        # Создаем пустую плитку
+        self.empty_image = self.create_empty_tile()
+        
+        # Фрейм для игрового поля
+        game_frame = tk.Frame(self.puzzle_window, bg='#2a3a4a', padx=10, pady=10)
+        game_frame.pack(pady=10)
+        
+        # Начальное расположение плиток (img1.png закреплена)
+        self.board = [0]  # Первая плитка на позиции 0
+        remaining = list(range(1, 8))
+        shuffle(remaining)
+        self.board.extend(remaining)
+        self.board.append(None)  # Пустая плитка
+        
+        self.empty_idx = self.board.index(None)
+        print(f"Начальная доска: {self.board}")
+        print(f"Пустая клетка на позиции: {self.empty_idx}")
+        
+        # Создаем кнопки-плитки
+        self.buttons = []
+        for i in range(9):
+            if i == 0:
+                # Первая плитка закреплена
+                btn = tk.Button(game_frame, image=self.get_image(i), state=tk.DISABLED,
+                               width=90, height=90, relief='ridge', bd=2)
+            else:
+                btn = tk.Button(game_frame, image=self.get_image(i),
+                               command=lambda idx=i: self.move(idx),
+                               width=90, height=90, relief='ridge', bd=2)
+            btn.grid(row=i//3, column=i%3, padx=2, pady=2)
+            self.buttons.append(btn)
+        
+        # Кнопка закрытия
+        close_btn = tk.Button(self.puzzle_window, text="✖ Закрыть", 
+                             font=self.text_font, bg='#6a4a4a', fg='white',
+                             command=self.puzzle_window.destroy)
+        close_btn.pack(pady=5)
+        
+        # Подсказка
+        hint_label = tk.Label(self.puzzle_window, 
+                             text="Подсказка: левый верхний угол не двигается\nСоберите все картинки по порядку",
+                             font=self.text_font, bg='#1a2a3a', fg='#888888')
+        hint_label.pack(pady=5)
+    
+    def check_image_files(self):
+        """Проверяет наличие файлов изображений"""
+        print(f"Текущая директория: {self.current_dir}")
+        print("Файлы в директории:")
+        try:
+            for file in os.listdir(self.current_dir):
+                if file.endswith('.png'):
+                    print(f"  Найден PNG: {file}")
+        except:
+            print("  Не удалось прочитать директорию")
+    
+    def create_placeholder(self, filename):
+        """Создает заглушку для отсутствующего изображения"""
+        img = Image.new('RGB', (90, 90), color='#4a4a4a')
+        from PIL import ImageDraw, ImageFont
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([0, 0, 89, 89], outline='white', width=2)
+        
+        # Пытаемся загрузить шрифт
+        try:
+            font = ImageFont.truetype("arial.ttf", 16)
+        except:
+            font = ImageFont.load_default()
+        
+        # Отображаем имя файла без расширения
+        text = filename.replace('.png', '')
+        draw.text((10, 35), text, fill='white', font=font)
+        
+        return ImageTk.PhotoImage(img)
+    
+    def create_empty_tile(self):
+        """Создает изображение пустой плитки"""
+        img = Image.new('RGB', (90, 90), color='#1a2a3a')
+        from PIL import ImageDraw
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([0, 0, 89, 89], outline='gray', width=2)
+        return ImageTk.PhotoImage(img)
+    
+    def move(self, index):
+        """Перемещает плитку"""
+        if index == 0:  # Первая плитка не двигается
+            return
+        
+        empty_row, empty_col = self.empty_idx // 3, self.empty_idx % 3
+        curr_row, curr_col = index // 3, index % 3
+        
+        # Проверяем соседство
+        if (abs(curr_row - empty_row) == 1 and curr_col == empty_col) or \
+           (abs(curr_col - empty_col) == 1 and curr_row == empty_row):
+            
+            # Меняем местами
+            self.board[index], self.board[self.empty_idx] = self.board[self.empty_idx], self.board[index]
+            
+            # Обновляем изображения
+            self.buttons[index].config(image=self.get_image(index))
+            self.buttons[self.empty_idx].config(image=self.get_image(self.empty_idx))
+            
+            self.empty_idx = index
+            
+            # Проверяем победу
+            if self.board == [0, 1, 2, 3, 4, 5, 6, 7, None]:
+                messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
+                self.puzzle_window.destroy()
+                self.on_complete()
+    
+    def get_image(self, index):
+        """Возвращает изображение для позиции"""
+        if self.board[index] is None:
+            return self.empty_image
+        return self.images[self.board[index]]
+    
+    def get_image(self, index):
+        """Возвращает изображение для позиции"""
+        if self.board[index] is None:
+            return self.empty_image
+        return self.images[self.board[index]]
+    
 
-    tk.Button(stub_window, text="Продолжить игру", font=global_fonts['small'],
-              bg='#4a4a4a', fg='white', command=lambda: (stub_window.destroy(), on_complete())).pack(pady=10)
 
 # Класс для загадок сфинкса
 class SphinxPuzzle:
@@ -401,8 +590,8 @@ class Game:
         btn_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         tk.Button(btn_frame, text="🔧 Кабинет №17 (серверная)",
-                 command=lambda: wire_puzzle_stub(self.parent, self.puzzle_complete), **self.button_style).pack(pady=5)
-
+         command=lambda: WirePuzzle(self.parent, self.puzzle_complete), **self.button_style).pack(pady=5)
+        
         if self.solved_puzzle:
             tk.Button(btn_frame, text="💻 Кабинет №22 (комп. класс)", command=self.room_22, **self.button_style).pack(pady=5)
             tk.Button(btn_frame, text="🏛 Музей", command=self.museum, **self.button_style).pack(pady=5)
