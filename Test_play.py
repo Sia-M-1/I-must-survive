@@ -211,7 +211,7 @@ class WirePuzzle:
             self.empty_idx = index
             
             # Проверяем победу
-            if self.board == [0, 1, 2, 3, 4, 5, 6, 7, None]:
+            if self.board == [0, None, 1, 2, 3, 4, 5, 6, 7]:
                 messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
                 self.puzzle_window.destroy()
                 self.on_complete()
