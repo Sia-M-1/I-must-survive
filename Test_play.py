@@ -293,19 +293,34 @@ class DocumentViewer:
 
         # Заголовок
         title_label = tk.Label(self.viewer_window, text="📄 ТРИ ДОКУМЕНТА НА СТОЛЕ 📄",
-                               font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700')
+                            font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700')
         title_label.pack(pady=10)
 
-        # Фрейм для документов
-        docs_frame = tk.Frame(self.viewer_window, bg='#3b3b3b', padx=20, pady=20)
-        docs_frame.pack(expand=True, fill="both", padx=20, pady=20)
+        # Создаем фрейм для документов с прокруткой
+        container = tk.Frame(self.viewer_window, bg='#3b3b3b')
+        container.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # Три документа
+        # Canvas для прокрутки
+        canvas = tk.Canvas(container, bg='#3b3b3b', highlightthickness=0)
+        canvas.pack(side="top", fill="both", expand=True)
+
+        # Горизонтальный скроллбар
+        scrollbar = tk.Scrollbar(container, orient="horizontal", command=canvas.xview)
+        scrollbar.pack(side="bottom", fill="x")
+
+        # Настраиваем canvas
+        canvas.configure(xscrollcommand=scrollbar.set)
+
+        # Фрейм внутри canvas для документов
+        docs_frame = tk.Frame(canvas, bg='#3b3b3b')
+        canvas.create_window((0, 0), window=docs_frame, anchor="nw")
+
+    # Три документа
         for i in range(1, 4):
             doc_frame = tk.Frame(docs_frame, bg='#4b4b4b', relief="raised", bd=3)
-            doc_frame.pack(side="left", expand=True, fill="both", padx=10, pady=10)
+            doc_frame.pack(side="left", padx=10, pady=10)
 
-            # Изображение документа
+    # Изображение документа
             try:
                 img = Image.open(f"document_{i}.png")
                 img = img.resize((180, 200))
@@ -316,7 +331,7 @@ class DocumentViewer:
             except:
                 # Замещающий текст
                 text_label = tk.Label(doc_frame, text=f"ДОКУМЕНТ {i}\n\n[Здесь должно быть изображение документа]",
-                                     font=global_fonts['small'], bg='#4b4b4b', fg='white')
+                                    font=global_fonts['small'], bg='#4b4b4b', fg='white')
                 text_label.pack(pady=20)
 
             # Кнопки для документа
@@ -324,44 +339,54 @@ class DocumentViewer:
             btn_frame.pack(pady=10)
 
             tk.Button(btn_frame, text="👁️ Просмотреть", font=global_fonts['small'],
-                     bg='#5b5b5b', fg='white', command=lambda x=i: self.view_document(x)).pack(side="left", padx=5)
+                bg='#5b5b5b', fg='white', command=lambda x=i: self.view_document(x)).pack(side="left", padx=5)
 
             tk.Button(btn_frame, text="✅ Выбрать", font=global_fonts['small'],
-                     bg='#6b8e23', fg='white', command=lambda x=i: self.choose_document(x)).pack(side="left", padx=5)
+                bg='#6b8e23', fg='white', command=lambda x=i: self.choose_document(x)).pack(side="left", padx=5)
+
+# Обновляем область прокрутки
+        docs_frame.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox("all"))
+
 
     def view_document(self, num):
         view_window = tk.Toplevel(self.viewer_window)
         view_window.title(f"Документ {num}")
-        view_window.geometry("400x500")
+        view_window.geometry("500x600")  # Чуть больше размер
         view_window.configure(bg='#f4e4c1')
 
-        # Контент документа
+    # Контент документа
         tk.Label(view_window, text=f"ДОКУМЕНТ №{num}",
-                font=global_fonts['large'], bg='#f4e4c1', fg='#8b4513').pack(pady=10)
+            font=global_fonts['large'], bg='#f4e4c1', fg='#8b4513').pack(pady=10)
 
         try:
-            img = Image.open(f"document_{num}_full.png")
-            img = img.resize((350, 400))
+        # Пытаемся открыть ту же картинку, что и в预览е
+            img = Image.open(f"document_{num}.png")
+            
+            # Увеличиваем размер для просмотра
+            img = img.resize((450, 500), Image.Resampling.LANCZOS)
             doc_img = ImageTk.PhotoImage(img)
+            
             img_label = tk.Label(view_window, image=doc_img, bg='#f4e4c1')
-            img_label.image = doc_img
-            img_label.pack(pady=10)
-        except:
-            # Текст документа
+            img_label.image = doc_img  # Сохраняем ссылку
+            img_label.pack(pady=10, padx=10)
+        
+        except Exception as e:
+            print(f"Ошибка загрузки документа {num}: {e}")
+        # Если картинка не найдена, показываем текст
             text_widget = tk.Text(view_window, wrap="word", font=Font(family="Courier", size=12),
-                                 bg='#fff4e0', fg='#000000', padx=20, pady=20)
+                             bg='#fff4e0', fg='#000000', padx=20, pady=20)
             text_widget.pack(expand=True, fill="both", padx=20, pady=20)
 
-            if num == 2:
-                text_widget.insert("1.0", "Это важный документ!\n\nПод ним лежит ключ от подвала.")
-            else:
-                text_widget.insert("1.0", f"Обычный документ №{num}\n\nЗдесь нет ничего интересного...")
-            text_widget.config(state="disabled")
-
-    def choose_document(self, num):
-        if messagebox.askyesno("Подтверждение", f"Точно выбрать документ {num}?"):
-            self.viewer_window.destroy()
-            self.on_choice(num)
+        if num == 2:
+            text_widget.insert("1.0", "Это важный документ!\n\nПод ним лежит ключ от подвала.")
+        else:
+            text_widget.insert("1.0", f"Обычный документ №{num}\n\nЗдесь нет ничего интересного...")
+        text_widget.config(state="disabled")
+    
+    # Кнопка закрытия
+        tk.Button(view_window, text="✖ Закрыть", font=global_fonts['small'],
+             bg='#8b4513', fg='white', command=view_window.destroy).pack(pady=10)
 
 # Основной класс игры
 class Game:
@@ -643,7 +668,6 @@ class Game:
     
     def puzzle_complete(self):
         self.solved_puzzle = True
-        messagebox.showinfo("✨ Успех ✨", "Свет в коридоре загорелся! Теперь видны другие кабинеты.")
         self.second_floor()
 
     def room_22(self):
