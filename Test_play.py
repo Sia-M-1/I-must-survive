@@ -222,12 +222,6 @@ class WirePuzzle:
             return self.empty_image
         return self.images[self.board[index]]
     
-    def get_image(self, index):
-        """Возвращает изображение для позиции"""
-        if self.board[index] is None:
-            return self.empty_image
-        return self.images[self.board[index]]
-    
 
 
 # Класс для загадок сфинкса
