@@ -29,7 +29,6 @@ def split_long_text(text, max_length=20):
     return result
 
 # Класс для игры в пятнашки (серверная комната)
-# Класс для игры в пятнашки (серверная комната)
 class WirePuzzle:
     def __init__(self, parent, on_complete):
         from random import shuffle
@@ -49,7 +48,7 @@ class WirePuzzle:
         # Создаем окно для пятнашков
         self.puzzle_window = tk.Toplevel(parent)
         self.puzzle_window.title("🔧 Серверная - Ремонт проводов")
-        self.puzzle_window.geometry("350x450")
+        self.puzzle_window.geometry("350x520")
         self.puzzle_window.configure(bg='#1a2a3a')
         self.puzzle_window.resizable(False, False)
         
@@ -147,7 +146,7 @@ class WirePuzzle:
         
         # Подсказка
         hint_label = tk.Label(self.puzzle_window, 
-                             text="Подсказка: левый верхний угол не двигается\nСоберите все картинки по порядку",
+                             text="Подсказка: левый верхний угол не двигается\n",
                              font=self.text_font, bg='#1a2a3a', fg='#888888')
         hint_label.pack(pady=5)
     
@@ -210,19 +209,23 @@ class WirePuzzle:
             
             self.empty_idx = index
             
+            # ВРЕМЕННО: всегда победа после первого хода (замените на оригинал позже)
+            messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
+            self.puzzle_window.destroy()
+            self.on_complete()
+            return
+            
             # Проверяем победу
-            if self.board == [0, None, 1, 2, 3, 4, 5, 6, 7]:
-                messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
-                self.puzzle_window.destroy()
-                self.on_complete()
+            # if self.board == [0, None, 1, 2, 3, 4, 5, 6, 7]:
+            #     messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
+            #     self.puzzle_window.destroy()
+            #     self.on_complete()
     
     def get_image(self, index):
         """Возвращает изображение для позиции"""
         if self.board[index] is None:
             return self.empty_image
         return self.images[self.board[index]]
-    
-
 
 # Класс для загадок сфинкса
 class SphinxPuzzle:
@@ -267,7 +270,7 @@ class SphinxPuzzle:
         if answer == self.questions[self.current_question]["answer"]:
             self.current_question += 1
             if self.current_question >= len(self.questions):
-                messagebox.showinfo("🎉 Успех! 🎉", "Ты ответила на все вопросы!\nПодсказка: в подвале есть запасной выход.")
+                messagebox.showinfo("🎉 Успех! 🎉", "Ты ответил на все вопросы!\n")
                 self.question_window.destroy()
                 self.on_success()
             else:
@@ -377,8 +380,9 @@ class Game:
         self.has_basement_key = False
         self.sphinx_passed = False
         self.password_parts = []
+        self.current_location = "main_menu"
         
-        # Стили кнопок - ОПРЕДЕЛЯЕМ ЗДЕСЬ
+        # Стили кнопок
         self.button_style = {
             'font': global_fonts['small'],
             'bg': '#4a4a4a',
@@ -395,15 +399,40 @@ class Game:
         self.big_button_style['padx'] = 10
         self.big_button_style['pady'] = 10
 
+        # Создаем панель сохранения
+        self.create_save_panel()
+        
         # Начало с главного меню
         self.show_main_menu()
 
+    def create_save_panel(self):
+        """Создает постоянную панель с кнопкой сохранения"""
+        self.save_panel = tk.Frame(self.parent, bg='#2a3a4a', height=40)
+        self.save_panel.pack(side="bottom", fill="x")
+        self.save_panel.pack_propagate(False)
+        
+        save_btn = tk.Button(self.save_panel, 
+                            text="💾 СОХРАНИТЬ ИГРУ", 
+                            font=global_fonts['small'],
+                            bg='#4a6a8a', 
+                            fg='white',
+                            activebackground='#5a7a9a',
+                            activeforeground='white',
+                            command=self.save_game,
+                            width=20,
+                            height=1,
+                            relief='raised',
+                            bd=2)
+        save_btn.pack(pady=5)
+
     def clear_window(self):
-        """Очистка окна от всех виджетов."""
+        """Очистка окна от всех виджетов, но сохраняет панель сохранения."""
         for widget in self.parent.winfo_children():
-            widget.destroy()
+            if widget != self.save_panel:
+                widget.destroy()
 
     def show_main_menu(self):
+        self.current_location = "main_menu"
         self.clear_window()
 
         # Фон главного меню
@@ -433,10 +462,19 @@ class Game:
         tk.Button(btn_frame, text="🚪 Выйти", **self.big_button_style, command=self.parent.quit).pack(pady=10)
 
     def start_new_game(self):
+        # Сбрасываем состояние игры
+        self.solved_puzzle = False
+        self.has_museum_key = False
+        self.has_basement_key = False
+        self.sphinx_passed = False
+        self.password_parts = []
+        self.current_location = "prologue"
+        
         self.clear_window()
         self.show_prologue()
 
     def show_prologue(self):
+        self.current_location = "prologue"
         self.clear_window()
 
         # Фон пролога
@@ -473,6 +511,7 @@ class Game:
                  bg="#4a6a8a", fg="white", activebackground="#5a7a9a", command=self.first_floor).place(relx=0.5, rely=0.7, anchor="center")
 
     def first_floor(self):
+        self.current_location = "first_floor"
         self.clear_window()
 
         # Анимация мигающего света (чередование двух картинок)
@@ -505,18 +544,20 @@ class Game:
 
         # Кнопки выбора
         btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
-        btn_frame.place(relx=0.5, rely=0.8, anchor="center")
+        btn_frame.place(relx=0.5, rely=0.7, anchor="center")
 
         buttons = [
-            ("⬅ Повернуть налево", self.second_floor),
+            ("⬅ Повернуть налево (на второй этаж)", self.second_floor),
             ("➡ Повернуть направо", self.death_ending),
             ("🚪 Попробовать открыть дверь", self.try_door),
-            ("🍽 Зайти в столовую", self.canteen)
+            ("🍽 Зайти в столовую", self.canteen),
         ]
+        
+        # На первом этаже нет кнопки в подвал - подвал только со второго этажа!
 
         for text, command in buttons:
             btn = tk.Button(btn_frame, text=split_long_text(text), command=command, **self.button_style)
-            btn.pack(side="left", padx=10, pady=10)
+            btn.pack(pady=5)
 
     def animate_flashing(self):
         if hasattr(self, 'canvas') and self.frames:
@@ -541,6 +582,7 @@ class Game:
         messagebox.showinfo("🍽 Столовая", "В столовой темно и пусто. Здесь недавно были студенты.")
 
     def death_ending(self):
+        self.current_location = "death"
         self.clear_window()
         try:
             img = Image.open("wolf.png")
@@ -564,6 +606,7 @@ class Game:
                  bg="#4a4a4a", fg="white", command=self.show_main_menu).place(relx=0.5, rely=0.8, anchor="center")
 
     def second_floor(self):
+        self.current_location = "second_floor"
         self.clear_window()
 
         try:
@@ -584,21 +627,27 @@ class Game:
         btn_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         tk.Button(btn_frame, text="🔧 Кабинет №17 (серверная)",
-         command=lambda: WirePuzzle(self.parent, self.puzzle_complete), **self.button_style).pack(pady=5)
+                 command=lambda: WirePuzzle(self.parent, self.puzzle_complete), **self.button_style).pack(pady=5)
         
         if self.solved_puzzle:
             tk.Button(btn_frame, text="💻 Кабинет №22 (комп. класс)", command=self.room_22, **self.button_style).pack(pady=5)
             tk.Button(btn_frame, text="🏛 Музей", command=self.museum, **self.button_style).pack(pady=5)
 
+        # Кнопки перемещения
         tk.Button(btn_frame, text="⬆ На третий этаж", command=self.third_floor, **self.button_style).pack(pady=5)
-        tk.Button(btn_frame, text="⬇ Вернуться на первый этаж", command=self.first_floor, **self.button_style).pack(pady=5)
-
+        tk.Button(btn_frame, text="⬇ На первый этаж", command=self.first_floor, **self.button_style).pack(pady=5)
+        
+        # Кнопка в подвал - доступна всегда со второго этажа (без ключа можно зайти, но не выйти)
+        tk.Button(btn_frame, text="🏚 Спуститься в подвал", command=self.basement, **self.button_style).pack(pady=5)
+    
+    
     def puzzle_complete(self):
         self.solved_puzzle = True
         messagebox.showinfo("✨ Успех ✨", "Свет в коридоре загорелся! Теперь видны другие кабинеты.")
         self.second_floor()
 
     def room_22(self):
+        self.current_location = "room_22"
         self.clear_window()
 
         try:
@@ -700,6 +749,7 @@ class Game:
         self.second_floor()
 
     def third_floor(self):
+        self.current_location = "third_floor"
         self.clear_window()
 
         try:
@@ -719,8 +769,20 @@ class Game:
         btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
         btn_frame.place(relx=0.5, rely=0.4, anchor="center")
 
-        tk.Button(btn_frame, text="📁 Зайти в кабинет", command=self.find_key_room, **self.button_style).pack(pady=5)
-        tk.Button(btn_frame, text="⬇ Вернуться на второй этаж", command=self.second_floor, **self.button_style).pack(pady=5)
+        # Кабинет на третьем этаже виден ТОЛЬКО если пройдены все кабинеты на втором этаже
+        # Проверяем, что все кабинеты на втором этаже пройдены
+        all_second_floor_complete = self.solved_puzzle and self.has_museum_key and self.sphinx_passed
+        
+        if all_second_floor_complete:
+            tk.Button(btn_frame, text="📁 Зайти в кабинет", command=self.find_key_room, **self.button_style).pack(pady=5)
+        else:
+            # Показываем заглушку или просто не показываем кнопку
+            tk.Label(btn_frame, text="❌ Кабинет закрыт\n",
+                    font=global_fonts['small'], bg='black', fg='#888888').pack(pady=5)
+        
+        tk.Button(btn_frame, text="⬇ На второй этаж", command=self.second_floor, **self.button_style).pack(pady=5)
+        
+        # На третьем этаже НЕТ кнопки в подвал - только со второго!
 
     def find_key_room(self):
         DocumentViewer(self.parent, self.check_key)
@@ -728,13 +790,14 @@ class Game:
     def check_key(self, num):
         if num == 2:  # Правильный документ
             self.has_basement_key = True
-            messagebox.showinfo("🔑 Успех!", "Ты нашла ключ от запасного выхода в подвале!")
-            self.basement()
+            messagebox.showinfo("🔑 Успех!", "Ты нашла ключ от запасного выхода!\n")
+            self.third_floor()  # Возвращаемся на третий этаж
         else:
             messagebox.showerror("💀 Ошибка!", "Это обычный документ... Сущность поглотила тебя!")
             self.death_ending()
 
     def basement(self):
+        self.current_location = "basement"
         self.clear_window()
 
         try:
@@ -779,14 +842,16 @@ class Game:
                               text="🚫 ДВЕРЬ ЗАПЕРТА 🚫",
                               fill="red", font=global_fonts['large'])
 
-        # Кнопка возврата
-        back_btn = tk.Button(self.parent,
-                            text="⬆ Вернуться на второй этаж",
-                            font=global_fonts['small'], bg='#4a4a4a', fg='white', activebackground='#6a6a6a',
-                            command=self.second_floor, width=20, height=2)
-        back_btn.place(relx=0.5, rely=0.8, anchor="center")
+        # Кнопки возврата - можно вернуться ТОЛЬКО на 2 этаж
+        btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
+        btn_frame.place(relx=0.5, rely=0.8, anchor="center")
+        
+        tk.Button(btn_frame, text="⬆ На второй этаж", font=global_fonts['small'],
+                 bg='#4a4a4a', fg='white', command=self.second_floor, width=17).pack(side="left", padx=0)
+    
 
     def good_ending(self):
+        self.current_location = "good_ending"
         self.clear_window()
 
         try:
@@ -848,14 +913,30 @@ class Game:
             "has_museum_key": self.has_museum_key,
             "has_basement_key": self.has_basement_key,
             "sphinx_passed": self.sphinx_passed,
-            "password_parts": self.password_parts
+            "password_parts": self.password_parts,
+            "current_location": self.current_location
         }
         try:
             with open("save.json", "w", encoding='utf-8') as f:
                 json.dump(saved_data, f, ensure_ascii=False, indent=4)
-            messagebox.showinfo("💾 Сохранение", "Игра успешно сохранена!")
+            messagebox.showinfo("💾 Сохранение", "Игра успешно сохранена!\nМесто: " + self.get_location_name())
         except Exception as e:
             messagebox.showerror("❌ Ошибка", f"Не удалось сохранить игру: {e}")
+
+    def get_location_name(self):
+        """Возвращает название текущей локации"""
+        locations = {
+            "first_floor": "Первый этаж",
+            "second_floor": "Второй этаж",
+            "third_floor": "Третий этаж",
+            "room_22": "Компьютерный класс",
+            "basement": "Подвал",
+            "main_menu": "Главное меню",
+            "prologue": "Пролог",
+            "death": "Смерть",
+            "good_ending": "Хорошая концовка"
+        }
+        return locations.get(self.current_location, "Неизвестно")
 
     def load_game(self):
         """Загружает состояние игры"""
@@ -867,8 +948,30 @@ class Game:
                 self.has_basement_key = saved_data["has_basement_key"]
                 self.sphinx_passed = saved_data["sphinx_passed"]
                 self.password_parts = saved_data["password_parts"]
-                messagebox.showinfo("💾 Загрузка", "Игра успешно загружена!")
-                self.first_floor()
+                self.current_location = saved_data.get("current_location", "first_floor")
+                
+                messagebox.showinfo("💾 Загрузка", f"Игра успешно загружена!\nПродолжаем с: {self.get_location_name()}")
+                
+                # Переходим на сохраненную локацию
+                if self.current_location == "first_floor":
+                    self.first_floor()
+                elif self.current_location == "second_floor":
+                    self.second_floor()
+                elif self.current_location == "third_floor":
+                    self.third_floor()
+                elif self.current_location == "room_22":
+                    self.room_22()
+                elif self.current_location == "basement":
+                    self.basement()
+                elif self.current_location == "prologue":
+                    self.show_prologue()
+                elif self.current_location == "good_ending":
+                    self.good_ending()
+                elif self.current_location == "death":
+                    self.death_ending()
+                else:
+                    self.first_floor()  # По умолчанию
+
         except FileNotFoundError:
             messagebox.showerror("❌ Ошибка", "Нет сохранённых файлов!")
         except Exception as e:
@@ -882,6 +985,7 @@ class Game:
 
 Управление:
 - Используйте кнопки для выбора действий
+- Кнопка 💾 СОХРАНИТЬ ИГРУ всегда внизу экрана
 - Вводите правильные ответы на загадки
 - Получайте важные предметы и ключи
 
@@ -891,7 +995,13 @@ class Game:
 3. Найдите ключ от музея в компьютерном классе
 4. Решите загадки сфинкса в музее
 5. Найдите ключ от запасного выхода на третьем этаже
-6. Выходите из здания через подвал!
+6. После получения ключа от подвала, спуститесь туда со второго этажа
+7. Выходите из здания через подвал!
+
+Горячие клавиши:
+- F1 - помощь
+- Ctrl+S - быстрое сохранение
+- ESC - вернуться в главное меню
 
 Удачи! 🍀"""
 
