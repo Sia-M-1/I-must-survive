@@ -634,19 +634,36 @@ class Game:
         self.current_location = "second_floor"
         self.clear_window()
 
-        try:
-            img = Image.open("second_floor.png")
+        # Выбираем фон в зависимости от прохождения пятнашков
+        if self.solved_puzzle:
+            # Светлый второй этаж (после прохождения)
+            try:
+                img = Image.open("second_floor.png")
+            except:
+                img = None
+        else:
+            # Темный второй этаж (до прохождения)
+            try:
+                img = Image.open("second_floor_dark.png")
+            except:
+                img = None
+
+        if img:
             img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
             self.bg_image = ImageTk.PhotoImage(img)
             canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
             canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
             canvas.pack()
-        except:
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#2a2a2a")
+        else:
+            # Запасной вариант, если картинки нет
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, 
+                            bg="#2a2a2a" if self.solved_puzzle else "#1a1a1a")
             canvas.pack()
+            canvas.create_text(WINDOW_WIDTH//2, WINDOW_HEIGHT//2,
+                            text="📚 ВТОРОЙ ЭТАЖ 📚\n" + ("☀️" if self.solved_puzzle else "🌑"),
+                            fill="white", font=global_fonts['large'])
 
-        canvas.create_text(WINDOW_WIDTH//2, 50, text="📚 ВТОРОЙ ЭТАЖ 📚",
-                          fill="white", font=global_fonts['large'])
+        
 
         btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
         btn_frame.place(relx=0.5, rely=0.5, anchor="center")
