@@ -315,12 +315,12 @@ class DocumentViewer:
         docs_frame = tk.Frame(canvas, bg='#3b3b3b')
         canvas.create_window((0, 0), window=docs_frame, anchor="nw")
 
-    # Три документа
+        # Три документа
         for i in range(1, 4):
             doc_frame = tk.Frame(docs_frame, bg='#4b4b4b', relief="raised", bd=3)
             doc_frame.pack(side="left", padx=10, pady=10)
 
-    # Изображение документа
+            # Изображение документа
             try:
                 img = Image.open(f"document_{i}.png")
                 img = img.resize((180, 200))
@@ -338,29 +338,31 @@ class DocumentViewer:
             btn_frame = tk.Frame(doc_frame, bg='#4b4b4b')
             btn_frame.pack(pady=10)
 
+            # Фиксируем значение i для каждой кнопки (чтобы избежать проблемы с lambda)
+            doc_num = i
+
             tk.Button(btn_frame, text="👁️ Просмотреть", font=global_fonts['small'],
-                bg='#5b5b5b', fg='white', command=lambda x=i: self.view_document(x)).pack(side="left", padx=5)
+                bg='#5b5b5b', fg='white', command=lambda x=doc_num: self.view_document(x)).pack(side="left", padx=5)
 
             tk.Button(btn_frame, text="✅ Выбрать", font=global_fonts['small'],
-                bg='#6b8e23', fg='white', command=lambda x=i: self.choose_document(x)).pack(side="left", padx=5)
+                bg='#6b8e23', fg='white', command=lambda x=doc_num: self.choose_document(x)).pack(side="left", padx=5)
 
-# Обновляем область прокрутки
+        # Обновляем область прокрутки
         docs_frame.update_idletasks()
         canvas.config(scrollregion=canvas.bbox("all"))
-
 
     def view_document(self, num):
         view_window = tk.Toplevel(self.viewer_window)
         view_window.title(f"Документ {num}")
-        view_window.geometry("500x600")  # Чуть больше размер
+        view_window.geometry("500x600")
         view_window.configure(bg='#f4e4c1')
 
-    # Контент документа
+        # Контент документа
         tk.Label(view_window, text=f"ДОКУМЕНТ №{num}",
             font=global_fonts['large'], bg='#f4e4c1', fg='#8b4513').pack(pady=10)
 
         try:
-        # Пытаемся открыть ту же картинку, что и в预览е
+            # Пытаемся открыть картинку
             img = Image.open(f"document_{num}.png")
             
             # Увеличиваем размер для просмотра
@@ -368,26 +370,31 @@ class DocumentViewer:
             doc_img = ImageTk.PhotoImage(img)
             
             img_label = tk.Label(view_window, image=doc_img, bg='#f4e4c1')
-            img_label.image = doc_img  # Сохраняем ссылку
+            img_label.image = doc_img
             img_label.pack(pady=10, padx=10)
         
         except Exception as e:
             print(f"Ошибка загрузки документа {num}: {e}")
-        # Если картинка не найдена, показываем текст
+            # Если картинка не найдена, показываем текст
             text_widget = tk.Text(view_window, wrap="word", font=Font(family="Courier", size=12),
                              bg='#fff4e0', fg='#000000', padx=20, pady=20)
             text_widget.pack(expand=True, fill="both", padx=20, pady=20)
 
-        if num == 2:
-            text_widget.insert("1.0", "Это важный документ!\n\nПод ним лежит ключ от подвала.")
-        else:
-            text_widget.insert("1.0", f"Обычный документ №{num}\n\nЗдесь нет ничего интересного...")
-        text_widget.config(state="disabled")
-    
-    # Кнопка закрытия
+            if num == 2:
+                text_widget.insert("1.0", "Это важный документ!\n\nПод ним лежит ключ от подвала.")
+            else:
+                text_widget.insert("1.0", f"Обычный документ №{num}\n\nЗдесь нет ничего интересного...")
+            text_widget.config(state="disabled")
+        
+        # Кнопка закрытия
         tk.Button(view_window, text="✖ Закрыть", font=global_fonts['small'],
              bg='#8b4513', fg='white', command=view_window.destroy).pack(pady=10)
 
+    def choose_document(self, num):
+        if messagebox.askyesno("Подтверждение", f"Точно выбрать документ {num}?"):
+            self.viewer_window.destroy()
+            self.on_choice(num)
+            
 # Основной класс игры
 class Game:
     def __init__(self, parent):
