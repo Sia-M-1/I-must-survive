@@ -230,195 +230,118 @@ class WirePuzzle:
 
 
 # Класс для просмотра документов
-# Класс для просмотра документов
 class DocumentViewer:
     def __init__(self, parent, on_choice):
         self.parent = parent
         self.on_choice = on_choice
         self.viewer_window = tk.Toplevel(parent)
-        self.viewer_window.title("Документы на столе")
-        self.viewer_window.geometry("800x600+500+100")  # Увеличил размер и сместил
+        self.viewer_window.title("Документы")
+        self.viewer_window.geometry("700x500")
         self.viewer_window.configure(bg='#2b2b2b')
-        self.viewer_window.transient(parent)
-        self.viewer_window.grab_set()
-        self.viewer_window.resizable(False, False)
-        
+
         # Заголовок
         title_label = tk.Label(self.viewer_window, text="📄 ТРИ ДОКУМЕНТА НА СТОЛЕ 📄",
-                              font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700')
+                            font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700')
         title_label.pack(pady=10)
-        
-        # Основной фрейм
-        main_frame = tk.Frame(self.viewer_window, bg='#2b2b2b')
-        main_frame.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        # Фрейм для документов
-        docs_frame = tk.Frame(main_frame, bg='#3b3b3b')
-        docs_frame.pack(pady=10, fill="both", expand=True)
-        
-        # Три документа в ряд
-        docs_container = tk.Frame(docs_frame, bg='#3b3b3b')
-        docs_container.pack(expand=True)
-        
-        self.document_frames = []
-        self.document_labels = []
-        self.choice_made = False  # Флаг, чтобы предотвратить повторный выбор
-        
+
+        # Создаем фрейм для документов с прокруткой
+        container = tk.Frame(self.viewer_window, bg='#3b3b3b')
+        container.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Canvas для прокрутки
+        canvas = tk.Canvas(container, bg='#3b3b3b', highlightthickness=0)
+        canvas.pack(side="top", fill="both", expand=True)
+
+        # Горизонтальный скроллбар
+        scrollbar = tk.Scrollbar(container, orient="horizontal", command=canvas.xview)
+        scrollbar.pack(side="bottom", fill="x")
+
+        # Настраиваем canvas
+        canvas.configure(xscrollcommand=scrollbar.set)
+
+        # Фрейм внутри canvas для документов
+        docs_frame = tk.Frame(canvas, bg='#3b3b3b')
+        canvas.create_window((0, 0), window=docs_frame, anchor="nw")
+
+        # Три документа
         for i in range(1, 4):
-            doc_frame = tk.Frame(docs_container, bg='#4b4b4b', relief="raised", bd=3)
-            doc_frame.pack(side="left", padx=15, pady=20)
-            self.document_frames.append(doc_frame)
-            
-            # Заголовок документа
-            tk.Label(doc_frame, text=f"ДОКУМЕНТ {i}", 
-                    font=global_fonts['small'], bg='#4b4b4b', fg='#ffd700').pack(pady=5)
-            
+            doc_frame = tk.Frame(docs_frame, bg='#4b4b4b', relief="raised", bd=3)
+            doc_frame.pack(side="left", padx=10, pady=10)
+
             # Изображение документа
             try:
                 img = Image.open(f"document_{i}.png")
-                # Уменьшаем изображение для компактности
-                img = img.resize((200, 250), Image.Resampling.LANCZOS)
+                img = img.resize((180, 200))
                 doc_img = ImageTk.PhotoImage(img)
                 img_label = tk.Label(doc_frame, image=doc_img, bg='#4b4b4b')
-                img_label.image = doc_img  # Сохраняем ссылку
-                img_label.pack(pady=10, padx=10)
-                self.document_labels.append(img_label)
-            except Exception as e:
-                print(f"Ошибка загрузки документа {i}: {e}")
-                # Замещающий текст с описанием
-                text_frame = tk.Frame(doc_frame, bg='#5b5b5b', width=200, height=250)
-                text_frame.pack(pady=10, padx=10)
-                text_frame.pack_propagate(False)
-                
-                if i == 2:
-                    text = "ВАЖНЫЙ ДОКУМЕНТ\n\nЭто титульный лист!\nПод ним лежит ключ."
-                else:
-                    text = f"Обычный документ {i}\n\nЗдесь нет ничего\nинтересного..."
-                
-                tk.Label(text_frame, text=text, 
-                        font=global_fonts['small'], bg='#5b5b5b', fg='white',
-                        justify="center").pack(expand=True)
-            
-            # Кнопки под документом
+                img_label.image = doc_img
+                img_label.pack(pady=10)
+            except:
+                # Замещающий текст
+                text_label = tk.Label(doc_frame, text=f"ДОКУМЕНТ {i}\n\n[Здесь должно быть изображение документа]",
+                                    font=global_fonts['small'], bg='#4b4b4b', fg='white')
+                text_label.pack(pady=20)
+
+            # Кнопки для документа
             btn_frame = tk.Frame(doc_frame, bg='#4b4b4b')
             btn_frame.pack(pady=10)
-            
-            # Кнопка просмотра
-            view_btn = tk.Button(btn_frame, text="👁️ Просмотреть", 
-                               font=global_fonts['small'], bg='#5b5b5b', fg='white',
-                               command=lambda x=i: self.view_document(x))
-            view_btn.pack(side="left", padx=5)
-            
-            # Кнопка выбора
-            choose_btn = tk.Button(btn_frame, text="✅ Выбрать", 
-                                 font=global_fonts['small'], bg='#6b8e23', fg='white',
-                                 command=lambda x=i: self.choose_document(x))
-            choose_btn.pack(side="left", padx=5)
-        
-        # Фрейм для сообщения
-        message_frame = tk.Frame(main_frame, bg='#2b2b2b', height=60)
-        message_frame.pack(pady=10, fill="x")
-        message_frame.pack_propagate(False)
-        
-        self.message_label = tk.Label(message_frame, text="",
-                                     font=global_fonts['small'], bg='#2b2b2b', fg='white',
-                                     wraplength=700)
-        self.message_label.pack(expand=True)
-        
-        # Кнопка закрытия
-        close_btn = tk.Button(main_frame, text="✖ Закрыть", 
-                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
-                            command=self.viewer_window.destroy, width=15, height=1)
-        close_btn.pack(pady=10)
+
+            # Фиксируем значение i для каждой кнопки (чтобы избежать проблемы с lambda)
+            doc_num = i
+
+            tk.Button(btn_frame, text="👁️ Просмотреть", font=global_fonts['small'],
+                bg='#5b5b5b', fg='white', command=lambda x=doc_num: self.view_document(x)).pack(side="left", padx=5)
+
+            tk.Button(btn_frame, text="✅ Выбрать", font=global_fonts['small'],
+                bg='#6b8e23', fg='white', command=lambda x=doc_num: self.choose_document(x)).pack(side="left", padx=5)
+
+        # Обновляем область прокрутки
+        docs_frame.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox("all"))
 
     def view_document(self, num):
-        """Просмотр документа в увеличенном виде"""
-        if self.choice_made:
-            return
-            
         view_window = tk.Toplevel(self.viewer_window)
         view_window.title(f"Документ {num}")
-        view_window.geometry("600x700+600+150")
+        view_window.geometry("500x600")
         view_window.configure(bg='#f4e4c1')
-        view_window.transient(self.viewer_window)
-        view_window.grab_set()
-        view_window.resizable(False, False)
-        
-        # Заголовок
-        tk.Label(view_window, text=f"ДОКУМЕНТ №{num}",
-                font=global_fonts['large'], bg='#f4e4c1', fg='#8b4513').pack(pady=15)
-        
+
         # Контент документа
-        content_frame = tk.Frame(view_window, bg='#fff4e0', bd=2, relief="solid")
-        content_frame.pack(pady=10, padx=20, fill="both", expand=True)
-        
+        tk.Label(view_window, text=f"ДОКУМЕНТ №{num}",
+            font=global_fonts['large'], bg='#f4e4c1', fg='#8b4513').pack(pady=10)
+
         try:
             # Пытаемся открыть картинку
             img = Image.open(f"document_{num}.png")
+            
             # Увеличиваем размер для просмотра
-            img = img.resize((500, 550), Image.Resampling.LANCZOS)
+            img = img.resize((450, 500), Image.Resampling.LANCZOS)
             doc_img = ImageTk.PhotoImage(img)
             
-            img_label = tk.Label(content_frame, image=doc_img, bg='#fff4e0')
+            img_label = tk.Label(view_window, image=doc_img, bg='#f4e4c1')
             img_label.image = doc_img
             img_label.pack(pady=10, padx=10)
         
         except Exception as e:
             print(f"Ошибка загрузки документа {num}: {e}")
             # Если картинка не найдена, показываем текст
-            text_widget = tk.Text(content_frame, wrap="word", font=Font(family="Courier", size=12),
-                                 bg='#fff4e0', fg='#000000', padx=20, pady=20)
+            text_widget = tk.Text(view_window, wrap="word", font=Font(family="Courier", size=12),
+                             bg='#fff4e0', fg='#000000', padx=20, pady=20)
             text_widget.pack(expand=True, fill="both", padx=20, pady=20)
 
             if num == 2:
-                text_widget.insert("1.0", "ТИТУЛЬНЫЙ ЛИСТ\n\n" + 
-                                  "Это важный документ!\n\n" +
-                                  "Под ним лежит ключ от запасного выхода.\n\n" +
-                                  "Нужно выбрать именно этот документ!")
+                text_widget.insert("1.0", "Это важный документ!\n\nПод ним лежит ключ от подвала.")
             else:
-                text_widget.insert("1.0", f"ОБЫЧНЫЙ ДОКУМЕНТ №{num}\n\n" +
-                                  "Здесь нет ничего интересного...\n\n" +
-                                  "Это не титульный лист.")
+                text_widget.insert("1.0", f"Обычный документ №{num}\n\nЗдесь нет ничего интересного...")
             text_widget.config(state="disabled")
         
         # Кнопка закрытия
         tk.Button(view_window, text="✖ Закрыть", font=global_fonts['small'],
-                bg='#8b4513', fg='white', command=view_window.destroy,
-                width=15, height=1).pack(pady=15)
+             bg='#8b4513', fg='white', command=view_window.destroy).pack(pady=10)
 
     def choose_document(self, num):
-        """Выбор документа"""
-        if self.choice_made:
-            return
-            
-        self.choice_made = True
-        
-        if num == 2:  # Правильный документ
-            self.message_label.config(text="✅ Правильно! Это титульный лист! Ключ от запасного выхода твой!",
-                                    fg='#4aff4a')
-            # Блокируем все кнопки
-            for frame in self.document_frames:
-                for child in frame.winfo_children():
-                    if isinstance(child, tk.Frame):
-                        for btn in child.winfo_children():
-                            if isinstance(btn, tk.Button):
-                                btn.config(state="disabled", bg='#6a6a6a')
-            
-            # Передаем результат через 1.5 секунды
-            self.viewer_window.after(1500, lambda: [self.viewer_window.destroy(), self.on_choice(num)])
-        else:
-            self.message_label.config(text="❌ Неправильно! Это обычный документ... Сущность приближается!",
-                                    fg='#ff6666')
-            # Блокируем все кнопки
-            for frame in self.document_frames:
-                for child in frame.winfo_children():
-                    if isinstance(child, tk.Frame):
-                        for btn in child.winfo_children():
-                            if isinstance(btn, tk.Button):
-                                btn.config(state="disabled", bg='#6a6a6a')
-            
-            # Смерть через 2 секунды
-            self.viewer_window.after(2000, lambda: [self.viewer_window.destroy(), self.on_choice(num)])
+        if messagebox.askyesno("Подтверждение", f"Точно выбрать документ {num}?"):
+            self.viewer_window.destroy()
+            self.on_choice(num)
             
 # Основной класс игры
 class Game:
@@ -1547,24 +1470,102 @@ class Game:
         if all_second_floor_complete:
             tk.Button(btn_frame, text="📁 Зайти в кабинет", command=self.find_key_room, **self.button_style).pack(pady=5)
         else:
-            tk.Label(btn_frame, text="❌ Кабинет закрыт\n(нужно исследовать второй этаж)",
+            tk.Label(btn_frame, text="❌ Кабинет закрыт",
                     font=global_fonts['small'], bg='black', fg='#888888').pack(pady=5)
         
         tk.Button(btn_frame, text="⬇ Спуститься на второй этаж", 
                  command=self.second_floor_1, **self.button_style).pack(pady=5)
 
     def find_key_room(self):
-        DocumentViewer(self.parent, self.check_key)
-
+        """Вход в кабинет на третьем этаже"""
+        self.current_location = "third_floor_room"
+        self.clear_window()
+        
+        # Фон кабинета на третьем этаже
+        try:
+            img = Image.open("class_third_floor.png")
+            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.bg_image = ImageTk.PhotoImage(img)
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
+            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
+            canvas.pack()
+        except:
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#3a4a5a")
+            canvas.pack()
+            canvas.create_text(WINDOW_WIDTH//2, 80, text="КАБИНЕТ НА ТРЕТЬЕМ ЭТАЖЕ",
+                            fill="white", font=global_fonts['large'])
+        
+        # Название кабинета (вверху)
+        title_bg = tk.Frame(self.parent, bg='black', bd=2, relief="solid")
+        title_bg.place(relx=0.5, rely=0.1, anchor="center")
+        
+        title_label = tk.Label(title_bg, text="📁 КАБИНЕТ НА ТРЕТЬЕМ ЭТАЖЕ 📁",
+                            font=global_fonts['large'], bg='black', fg='#ffd700')
+        title_label.pack(padx=20, pady=10)
+        
+        # Текст подсказки
+        hint_bg = tk.Frame(self.parent, bg='black', bd=2, relief="solid")
+        hint_bg.place(relx=0.5, rely=0.25, anchor="center")
+        
+        hint_label = tk.Label(hint_bg, 
+                            text="Посмотри документы и разберись,\nкакой из них является правильным титульным листом",
+                            font=global_fonts['small'], bg='black', fg='#ffffff',
+                            wraplength=500, justify="center")
+        hint_label.pack(padx=30, pady=15)
+        
+        # Кнопка просмотра документов (отдельно, без черного фона)
+        docs_btn = tk.Button(self.parent, text="📄 Просмотреть документы", 
+                            font=global_fonts['large'], bg='#4a6a8a', fg='white',
+                            command=lambda: DocumentViewer(self.parent, self.check_key),
+                            width=25, height=2, bd=3, relief="raised")
+        docs_btn.place(relx=0.5, rely=0.55, anchor="center")  # Чуть выше
+        
+        # Кнопка выхода (отдельно, без черного фона)
+        exit_btn = tk.Button(self.parent, text="🚪 Выйти из кабинета", 
+                            font=global_fonts['large'], bg='#8a4a4a', fg='white',
+                            command=self.third_floor, width=20, height=2, bd=3, relief="raised")
+        exit_btn.place(relx=0.5, rely=0.75, anchor="center")  # Внизу
+        
     def check_key(self, num):
+        """Проверка выбранного документа"""
         if num == 2:  # Правильный документ
             self.has_basement_key = True
-            messagebox.showinfo("🔑 Успех!", "Ты нашла ключ от запасного выхода!\n")
-            self.third_floor()  # Возвращаемся на третий этаж
+            # Показываем сообщение об успехе прямо в кабинете
+            self.show_key_success()
         else:
-            messagebox.showerror("💀 Ошибка!", "Это обычный документ... Сущность поглотила тебя!")
             self.death_ending()
-
+    def show_key_success(self):
+        """Показывает сообщение об успехе в кабинете"""
+        self.clear_window()
+        
+        # Фон кабинета
+        try:
+            img = Image.open("class_third_floor.png")
+            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.bg_image = ImageTk.PhotoImage(img)
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
+            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
+            canvas.pack()
+        except:
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#3a4a5a")
+            canvas.pack()
+        
+        # Сообщение об успехе
+        success_bg = tk.Frame(self.parent, bg='black', bd=3, relief="solid")
+        success_bg.place(relx=0.5, rely=0.4, anchor="center")
+        
+        success_label = tk.Label(success_bg, 
+                                text="КЛЮЧ ОТ ЗАПАСНОГО ВЫХОДА НАЙДЕН!",
+                                font=global_fonts['large'], bg='black', fg='#4aff4a',
+                                wraplength=500, justify="center")
+        success_label.pack(padx=30, pady=30)
+        
+        # Кнопка выхода
+        tk.Button(self.parent, text="🚪 Выйти из кабинета", 
+                font=global_fonts['large'], bg='#8a4a4a', fg='white',
+                command=self.third_floor, width=20, height=2).place(relx=0.5, rely=0.7, anchor="center")
+        
+        
     def basement(self):
         self.current_location = "basement"
         self.clear_window()
