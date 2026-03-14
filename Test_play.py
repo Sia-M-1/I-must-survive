@@ -1083,37 +1083,63 @@ class Game:
         """Показывает диалоговое окно с андроидом"""
         dialogue_window = tk.Toplevel(self.parent)
         dialogue_window.title("Ирина Идуардовна (андроид)")
-        dialogue_window.geometry("400x350+850+50")  # Меньше размер и смещено вправо
+        dialogue_window.geometry("600x450")  # Увеличил размер для фона
         dialogue_window.configure(bg='#2a1a2a')
         dialogue_window.transient(self.parent)
         dialogue_window.grab_set()
-        dialogue_window.resizable(False, False)  # Запрещаем изменение размера
+        dialogue_window.resizable(False, False)
         
-        # Заголовок с именем
-        name_label = tk.Label(dialogue_window, text="🤖 Ирина Идуардовна 🤖",
-                            font=global_fonts['small'], bg='#2a1a2a', fg='#ff99ff')
-        name_label.pack(pady=10)
+        # Центрируем окно на экране
+        dialogue_window.update_idletasks()
+        x = (dialogue_window.winfo_screenwidth() - 600) // 2
+        y = (dialogue_window.winfo_screenheight() - 450) // 2
+        dialogue_window.geometry(f"+{x}+{y}")
         
-        # Фрейм для контента с прокруткой
-        main_frame = tk.Frame(dialogue_window, bg='#2a1a2a')
-        main_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        # Загружаем фон с изображением андроида
+        try:
+            bg_image = Image.open("iiduardovna.png")
+            bg_image = bg_image.resize((600, 450), Image.Resampling.LANCZOS)
+            self.dialogue_bg = ImageTk.PhotoImage(bg_image)
+            
+            # Canvas для фона
+            bg_canvas = tk.Canvas(dialogue_window, width=600, height=450, highlightthickness=0)
+            bg_canvas.pack(fill="both", expand=True)
+            bg_canvas.create_image(0, 0, anchor="nw", image=self.dialogue_bg)
+            
+            # Создаем фрейм для контента справа (примерно с 250px от левого края)
+            content_frame = tk.Frame(bg_canvas, bg='#3a2a3a', bd=2, relief="solid")
+            # Помещаем фрейм в правую часть (смещение 250px от левого края)
+            bg_canvas.create_window(280, 50, window=content_frame, anchor="nw", width=280, height=350)
+            
+        except Exception as e:
+            print(f"Ошибка загрузки фона: {e}")
+            # Если фон не загрузился, используем обычный фрейм
+            bg_canvas = tk.Canvas(dialogue_window, width=600, height=450, bg='#2a1a2a')
+            bg_canvas.pack(fill="both", expand=True)
+            
+            # Заголовок с именем
+            name_label = tk.Label(bg_canvas, text="🤖 Ирина Идуардовна 🤖",
+                                font=global_fonts['large'], bg='#2a1a2a', fg='#ff99ff')
+            bg_canvas.create_window(300, 40, window=name_label)
+            
+            # Фрейм для контента
+            content_frame = tk.Frame(bg_canvas, bg='#3a2a3a', bd=2, relief="solid")
+            bg_canvas.create_window(300, 150, window=content_frame, width=350, height=250)
         
-        # Canvas для прокрутки
-        canvas = tk.Canvas(main_frame, bg='#3a2a3a', highlightthickness=0, height=350)
+        # Добавляем scrollbar для контента
+        canvas = tk.Canvas(content_frame, bg='#3a2a3a', highlightthickness=0, height=330)
         canvas.pack(side="left", fill="both", expand=True)
         
-        # Scrollbar
-        scrollbar = tk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollbar = tk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
         scrollbar.pack(side="right", fill="y")
         
-        # Настраиваем canvas
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        # Фрейм для контента внутри canvas
-        content_frame = tk.Frame(canvas, bg='#3a2a3a', bd=2, relief="solid")
-        canvas.create_window((0, 0), window=content_frame, anchor="nw", width=360)
+        # Фрейм для текста внутри canvas
+        text_frame = tk.Frame(canvas, bg='#3a2a3a')
+        canvas.create_window((0, 0), window=text_frame, anchor="nw", width=260)
         
-        # Начинаем с первого этапа диалога, если загадки еще не пройдены
+        # Начинаем с первого этапа диалога
         if not self.sphinx_passed:
             self.dialogue_stage = 0
         else:
@@ -1121,37 +1147,36 @@ class Game:
         
         self.dialogue_window = dialogue_window
         self.dialogue_canvas = canvas
-        self.dialogue_content = content_frame
+        self.dialogue_text_frame = text_frame
+        
+        # Обновляем область прокрутки
+        text_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         
         self.update_android_dialogue()
         
-        # Обновляем область прокрутки
-        content_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-
     def update_android_dialogue(self):
         """Обновляет диалог с андроидом"""
         # Очищаем фрейм
-        for widget in self.dialogue_content.winfo_children():
+        for widget in self.dialogue_text_frame.winfo_children():
             widget.destroy()
         
         # Создаем виджет для сообщения с переносом текста
         def create_message(text):
-            msg_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
-            msg_frame.pack(fill="x", padx=10, pady=3)
+            msg_frame = tk.Frame(self.dialogue_text_frame, bg='#3a2a3a')
+            msg_frame.pack(fill="x", padx=5, pady=3)
             
-            # Используем Label с wraplength для автоматического переноса
             msg_label = tk.Label(msg_frame, text=text,
                             font=global_fonts['small'], bg='#3a2a3a', fg='white',
-                            wraplength=320, justify="left")
+                            wraplength=240, justify="left")
             msg_label.pack()
         
         # Создаем кнопку
         def create_button(text, command, color='#4a6a8a'):
-            btn_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
+            btn_frame = tk.Frame(self.dialogue_text_frame, bg='#3a2a3a')
             btn_frame.pack(pady=5)
             btn = tk.Button(btn_frame, text=text, 
                         font=global_fonts['small'], bg=color, fg='white',
-                        command=command, width=15, height=1)
+                        command=command, width=12, height=1)
             btn.pack()
         
         # Этапы диалога
@@ -1185,61 +1210,61 @@ class Game:
             ]
             
             riddle_index = self.dialogue_stage - 3
-            current_riddle = riddles[riddle_index]  # Сохраняем текущую загадку в отдельную переменную
+            current_riddle = riddles[riddle_index]
             
             create_message(f"Загадка {riddle_index + 1}:")
             create_message(current_riddle['question'])
             
             # Поле для ответа
-            answer_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
+            answer_frame = tk.Frame(self.dialogue_text_frame, bg='#3a2a3a')
             answer_frame.pack(pady=5)
             
             tk.Label(answer_frame, text="Ответ:", 
-                    font=global_fonts['small'], bg='#3a2a3a', fg='white').pack(side="left", padx=5)
+                    font=global_fonts['small'], bg='#3a2a3a', fg='white').pack(side="left", padx=2)
             
-            answer_entry = tk.Entry(answer_frame, width=15, font=global_fonts['small'])
-            answer_entry.pack(side="left", padx=5)
+            answer_entry = tk.Entry(answer_frame, width=12, font=global_fonts['small'])
+            answer_entry.pack(side="left", padx=2)
             answer_entry.focus_set()
             
             # Сообщение об ошибке (изначально скрыто)
-            error_label = tk.Label(self.dialogue_content, text="",
+            error_label = tk.Label(self.dialogue_text_frame, text="",
                                 font=global_fonts['small'], bg='#3a2a3a', fg='#ff6666',
-                                wraplength=320)
+                                wraplength=240)
             error_label.pack(pady=2)
             
             # Переменная для отслеживания, был ли уже дан ответ
-            answered = [False]  # Используем список для изменяемого объекта
+            answered = [False]
             
             # Функция проверки ответа для конкретной загадки
             def create_check_function(riddle, entry, error, answered_flag):
                 def check():
-                    if answered_flag[0]:  # Если уже ответили, ничего не делаем
+                    if answered_flag[0]:
                         return
                     
                     user_answer = entry.get().lower().strip()
                     if user_answer == riddle["answer"]:
                         answered_flag[0] = True
                         # Показываем сообщение об успехе
-                        success_label = tk.Label(self.dialogue_content, 
+                        success_label = tk.Label(self.dialogue_text_frame, 
                                                 text="✅ Правильно! Молодец!",
                                                 font=global_fonts['small'], bg='#3a2a3a', fg='#4aff4a',
-                                                wraplength=320)
+                                                wraplength=240)
                         success_label.pack(pady=2)
                         
                         # Блокируем поле ввода
                         entry.config(state="disabled")
                         
                         # Переходим к следующему этапу через 1 секунду
-                        self.dialogue_content.after(1000, self.next_dialogue_stage)
+                        self.dialogue_text_frame.after(1000, self.next_dialogue_stage)
                     else:
                         error.config(text="❌ Неправильно! Попробуй еще раз.")
                 return check
             
             # Кнопка ответить
-            check_btn = tk.Button(self.dialogue_content, text="📝 Ответить", 
+            check_btn = tk.Button(self.dialogue_text_frame, text="📝 Ответить", 
                                 font=global_fonts['small'], bg='#4a8a4a', fg='white',
                                 command=create_check_function(current_riddle, answer_entry, error_label, answered),
-                                width=15)
+                                width=12)
             check_btn.pack(pady=5)
         
         elif self.dialogue_stage == 6:
@@ -1252,11 +1277,11 @@ class Game:
             create_button("✖ Закрыть", self.dialogue_window.destroy, '#8a4a4a')
         
         # Обновляем область прокрутки
-        self.dialogue_content.update_idletasks()
+        self.dialogue_text_frame.update_idletasks()
         self.dialogue_canvas.configure(scrollregion=self.dialogue_canvas.bbox("all"))
         # Прокручиваем вниз
         self.dialogue_canvas.yview_moveto(1.0)
-
+        
     def next_dialogue_stage(self):
         """Переход к следующему этапу диалога"""
         self.dialogue_stage += 1
