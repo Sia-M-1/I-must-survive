@@ -248,7 +248,7 @@ class SphinxPuzzle:
         self.question_window.configure(bg='#2a1a2a')
 
         # Заголовок
-        name_label = tk.Label(self.question_window, text="🤖 Ирина Идуардовна (андроид) 🤖",
+        name_label = tk.Label(self.question_window, text="Ирина Идуардовна (андроид)",
                             font=global_fonts['large'], bg='#2a1a2a', fg='#ff99ff')
         name_label.pack(pady=20)
 
@@ -277,7 +277,7 @@ class SphinxPuzzle:
                 self.question_window.destroy()
                 self.show_question()
         else:
-            messagebox.showerror("💀 Ошибка! 💀", "Неверный ответ... Сущность поглощает тебя!")
+            messagebox.showerror("Ошибка!", "Неверный ответ... Сущность поглощает тебя!")
             self.question_window.destroy()
             self.on_fail()
 
@@ -292,7 +292,7 @@ class DocumentViewer:
         self.viewer_window.configure(bg='#2b2b2b')
 
         # Заголовок
-        title_label = tk.Label(self.viewer_window, text="📄 ТРИ ДОКУМЕНТА НА СТОЛЕ 📄",
+        title_label = tk.Label(self.viewer_window, text="ТРИ ДОКУМЕНТА НА СТОЛЕ",
                             font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700')
         title_label.pack(pady=10)
 
@@ -341,7 +341,7 @@ class DocumentViewer:
             # Фиксируем значение i для каждой кнопки (чтобы избежать проблемы с lambda)
             doc_num = i
 
-            tk.Button(btn_frame, text="👁️ Просмотреть", font=global_fonts['small'],
+            tk.Button(btn_frame, text="Просмотреть", font=global_fonts['small'],
                 bg='#5b5b5b', fg='white', command=lambda x=doc_num: self.view_document(x)).pack(side="left", padx=5)
 
             tk.Button(btn_frame, text="✅ Выбрать", font=global_fonts['small'],
@@ -412,6 +412,7 @@ class Game:
         self.has_basement_key = False
         self.sphinx_passed = False
         self.password_parts = []
+        self.code_words = {}
         self.current_location = "main_menu"
         
         # Стили кнопок
@@ -444,7 +445,7 @@ class Game:
         self.save_panel.pack_propagate(False)
         
         save_btn = tk.Button(self.save_panel, 
-                            text="💾 СОХРАНИТЬ ИГРУ", 
+                            text="СОХРАНИТЬ ИГРУ", 
                             font=global_fonts['small'],
                             bg='#4a6a8a', 
                             fg='white',
@@ -469,7 +470,7 @@ class Game:
 
         # Фон главного меню
         try:
-            img = Image.open("menu_bg.png")
+            img = Image.open("start.png")
             img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
             self.bg_image = ImageTk.PhotoImage(img)
             canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
@@ -490,8 +491,8 @@ class Game:
         btn_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         tk.Button(btn_frame, text="🌟 Начать новую игру", **self.big_button_style, command=self.start_new_game).pack(pady=10)
-        tk.Button(btn_frame, text="💾 Продолжить игру", **self.big_button_style, command=self.load_game).pack(pady=10)
-        tk.Button(btn_frame, text="🚪 Выйти", **self.big_button_style, command=self.parent.quit).pack(pady=10)
+        tk.Button(btn_frame, text="Продолжить игру", **self.big_button_style, command=self.load_game).pack(pady=10)
+        tk.Button(btn_frame, text="Выйти", **self.big_button_style, command=self.parent.quit).pack(pady=10)
 
     def start_new_game(self):
         # Сбрасываем состояние игры
@@ -522,7 +523,9 @@ class Game:
             canvas.pack()
 
         # Текст пролога с оформлением
-        prologue_text = """Ходит легенда, что в колледже \"Винкс\" обитает странная сущность...
+        prologue_text = """ТУТ БУДЕТ ГИФКАААА
+        
+        Ходит легенда, что в колледже \"Винкс\" обитает странная сущность...
         
 Она проявляется только после 19:00. Студентам даётся всего лишь 10 минут,
 чтобы успеть выйти из здания.
@@ -551,7 +554,7 @@ class Game:
             self.frames = []
             # Загружаем две картинки
             for i in range(1, 3):
-                img = Image.open(f"corridor_flash_{i}.png")
+                img = Image.open(f"first_floor_start.png")
                 img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
                 self.frames.append(ImageTk.PhotoImage(img))
 
@@ -570,7 +573,7 @@ class Game:
         desc_bg = tk.Frame(self.parent, bg='black', bd=2, relief="solid")
         desc_bg.place(relx=0.5, rely=0.2, anchor="center")
 
-        description = "Ты находишься в коридоре первого этажа. Свет периодически мерцает..."
+        description = "Ты находишься в коридоре первого этажа."
         desc_label = tk.Label(desc_bg, text=split_long_text(description), font=global_fonts['small'], bg='black', fg='white')
         desc_label.pack(padx=20, pady=10)
 
@@ -579,14 +582,12 @@ class Game:
         btn_frame.place(relx=0.5, rely=0.7, anchor="center")
 
         buttons = [
-            ("⬅ Повернуть налево (на второй этаж)", self.second_floor),
+            ("⬅ Повернуть налево (на второй этаж)", self.second_floor_1),  # Ведет в первый коридор второго этажа
             ("➡ Повернуть направо", self.death_ending),
-            ("🚪 Попробовать открыть дверь", self.try_door),
-            ("🍽 Зайти в столовую", self.canteen),
+            ("Попробовать открыть дверь", self.try_door),
+            ("Зайти в столовую", self.canteen),
         ]
         
-        # На первом этаже нет кнопки в подвал - подвал только со второго этажа!
-
         for text, command in buttons:
             btn = tk.Button(btn_frame, text=split_long_text(text), command=command, **self.button_style)
             btn.pack(pady=5)
@@ -608,10 +609,10 @@ class Game:
             self.parent.after(300, self.animate_simple_flashing)
 
     def try_door(self):
-        messagebox.showinfo("🚪 Дверь", "Дверь закрыта извне... Видимо, придётся искать другой выход.")
+        messagebox.showinfo("Дверь", "Дверь закрыта извне... Видимо, придётся искать другой выход.")
 
     def canteen(self):
-        messagebox.showinfo("🍽 Столовая", "В столовой темно и пусто. Здесь недавно были студенты.")
+        messagebox.showinfo("Столовая", "В столовой темно и пусто. Здесь недавно были студенты.")
 
     def death_ending(self):
         self.current_location = "death"
@@ -631,27 +632,28 @@ class Game:
             canvas.create_text(400, 300, text="🐺", font=global_fonts['large'], fill="red")
 
         canvas.create_text(WINDOW_WIDTH//2, WINDOW_HEIGHT//2,
-                          text="💀 ТЫ ВСТРЕТИЛ СУЩНОСТЬ... 💀\n\nКрасный волк поражает тебя мощным зарядом энергии.\n\nКОНЕЦ ИГРЫ",
+                          text="ТЫ ВСТРЕТИЛ СУЩНОСТЬ... \n\nКрасный волк поражает тебя мощным зарядом энергии.\n\nКОНЕЦ ИГРЫ",
                           fill="white", font=global_fonts['large'], justify="center")
 
-        tk.Button(self.parent, text="🏠 В главное меню", font=global_fonts['large'],
+        tk.Button(self.parent, text="В главное меню", font=global_fonts['large'],
                  bg="#4a4a4a", fg="white", command=self.show_main_menu).place(relx=0.5, rely=0.8, anchor="center")
 
-    def second_floor(self):
-        self.current_location = "second_floor"
+    # ПЕРВЫЙ КОРИДОР ВТОРОГО ЭТАЖА (с лестницами)
+    def second_floor_1(self):
+        self.current_location = "second_floor_1"
         self.clear_window()
 
         # Выбираем фон в зависимости от прохождения пятнашков
         if self.solved_puzzle:
-            # Светлый второй этаж (после прохождения)
+            # Светлый коридор (после прохождения)
             try:
-                img = Image.open("second_floor.png")
+                img = Image.open("second_floor_1_light.png")
             except:
                 img = None
         else:
-            # Темный второй этаж (до прохождения)
+            # Темный коридор (до прохождения)
             try:
-                img = Image.open("second_floor_dark.png")
+                img = Image.open("second_floor_1_nolight.png")
             except:
                 img = None
 
@@ -662,44 +664,186 @@ class Game:
             canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
             canvas.pack()
         else:
-            # Запасной вариант, если картинки нет
+            # Запасной вариант
             canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, 
                             bg="#2a2a2a" if self.solved_puzzle else "#1a1a1a")
             canvas.pack()
             canvas.create_text(WINDOW_WIDTH//2, WINDOW_HEIGHT//2,
-                            text="📚 ВТОРОЙ ЭТАЖ 📚\n" + ("☀️" if self.solved_puzzle else "🌑"),
+                            text="НАЧАЛО КОРИДОРА ВТОРОГО ЭТАЖА\n" + ("☀️" if self.solved_puzzle else "🌑"),
                             fill="white", font=global_fonts['large'])
 
-        
+        # Текст описания
+        desc_bg = tk.Frame(self.parent, bg='black', bd=2, relief="solid")
+        desc_bg.place(relx=0.5, rely=0.2, anchor="center")
 
+        if self.solved_puzzle:
+            description = "Свет в коридоре зажегся! Видно лестницы на другие этажи."
+        else:
+            description = "Ты в начале коридора второго этажа. Здесь темно, но видны лестницы."
+        
+        desc_label = tk.Label(desc_bg, text=split_long_text(description), 
+                             font=global_fonts['small'], bg='black', fg='white')
+        desc_label.pack(padx=20, pady=10)
+
+        # Кнопки выбора
         btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
         btn_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        tk.Button(btn_frame, text="🔧 Кабинет №17 (серверная)",
-                 command=lambda: WirePuzzle(self.parent, self.puzzle_complete), **self.button_style).pack(pady=5)
+        # Кнопка в основной коридор (с кабинетами)
+        tk.Button(btn_frame, text="⬅ Повернуть налево (в основной коридор)", 
+                 command=self.second_floor_2, **self.button_style).pack(pady=5)
         
+        # Кнопка на третий этаж
+        tk.Button(btn_frame, text="⬆ Подняться на третий этаж", 
+                 command=self.third_floor, **self.button_style).pack(pady=5)
+        
+        # Кнопка на первый этаж
+        tk.Button(btn_frame, text="⬇ Спуститься на первый этаж", 
+                 command=self.first_floor, **self.button_style).pack(pady=5)
+
+    # ВТОРОЙ КОРИДОР ВТОРОГО ЭТАЖА (только кабинеты)
+    def second_floor_2(self):
+        self.current_location = "second_floor_2"
+        self.clear_window()
+
+        # Выбираем фон в зависимости от прохождения пятнашков
+        if self.solved_puzzle:
+            # Светлый коридор (после прохождения)
+            try:
+                img = Image.open("second_floor_2_light.png")
+            except:
+                img = None
+        else:
+            # Темный коридор (до прохождения)
+            try:
+                img = Image.open("second_floor_2_nolight.png")
+            except:
+                img = None
+
+        if img:
+            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.bg_image = ImageTk.PhotoImage(img)
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
+            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
+            canvas.pack()
+        else:
+            # Запасной вариант
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, 
+                            bg="#2a2a2a" if self.solved_puzzle else "#1a1a1a")
+            canvas.pack()
+            canvas.create_text(WINDOW_WIDTH//2, WINDOW_HEIGHT//2,
+                            text="ОСНОВНОЙ КОРИДОР ВТОРОГО ЭТАЖА\n" + ("☀️" if self.solved_puzzle else "🌑"),
+                            fill="white", font=global_fonts['large'])
+
+        # Текст описания
+        desc_bg = tk.Frame(self.parent, bg='black', bd=2, relief="solid")
+        desc_bg.place(relx=0.5, rely=0.2, anchor="center")
+
+        if self.solved_puzzle:
+            description = "В основном коридоре горит свет. Видны двери кабинетов."
+        else:
+            description = "Здесь темно... Нужно починить свет в серверной, чтобы увидеть хоть что-то..."
+        
+        desc_label = tk.Label(desc_bg, text=split_long_text(description), 
+                             font=global_fonts['small'], bg='black', fg='white')
+        desc_label.pack(padx=20, pady=10)
+
+        btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
+        btn_frame.place(relx=0.5, rely=0.5, anchor="center")
+        
+        # Кабинет №17 (серверная) - доступен всегда
+        tk.Button(btn_frame, text="🔧 Кабинет №17 (серверная)",
+                command=self.room_17, **self.button_style).pack(pady=5)
+        
+        # Кабинеты доступны только если свет починен
         if self.solved_puzzle:
             tk.Button(btn_frame, text="💻 Кабинет №22 (комп. класс)", command=self.room_22, **self.button_style).pack(pady=5)
             tk.Button(btn_frame, text="🏛 Музей", command=self.museum, **self.button_style).pack(pady=5)
+        else:
+            tk.Label(btn_frame, text="Другие кабинеты не видны в темноте", 
+                    font=global_fonts['small'], bg='black', fg='#888888').pack(pady=5)
 
-        # Кнопки перемещения
-        tk.Button(btn_frame, text="⬆ На третий этаж", command=self.third_floor, **self.button_style).pack(pady=5)
-        tk.Button(btn_frame, text="⬇ На первый этаж", command=self.first_floor, **self.button_style).pack(pady=5)
+        # Кнопка возврата в начало коридора
+        tk.Button(btn_frame, text="⬅ Вернуться в начало коридора", 
+                 command=self.second_floor_1, **self.button_style).pack(pady=5)
+    
+    def room_17(self):
+        self.current_location = "room_17"
+        self.clear_window()
+
+        # Фон кабинета №17
+        try:
+            img = Image.open("class_17.png")  # Фон кабинета
+            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.bg_image = ImageTk.PhotoImage(img)
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
+            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
+            canvas.pack()
+        except:
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#3a4a5a")
+            canvas.pack()
+            canvas.create_text(WINDOW_WIDTH//2, 100, text="КАБИНЕТ №17 (СЕРВЕРНАЯ)",
+                            fill="white", font=global_fonts['large'])
+
+        # Текст задания (вверху)
+        if self.solved_puzzle:
+            task_text = "Свет уже включен! Можно выходить"
+        else:
+            task_text = "Почини серверную, чтобы включить свет во всем здании!"
         
-        # Кнопка в подвал - доступна всегда со второго этажа (без ключа можно зайти, но не выйти)
-        tk.Button(btn_frame, text="🏚 Спуститься в подвал", command=self.basement, **self.button_style).pack(pady=5)
-    
-    
+        task_bg = tk.Frame(self.parent, bg='black', bd=2, relief="solid")
+        task_bg.place(relx=0.5, rely=0.15, anchor="center")
+        
+        task_label = tk.Label(task_bg, text=split_long_text(task_text), 
+                            font=global_fonts['small'], bg='black', fg='#ffd700')
+        task_label.pack(padx=20, pady=10)
+
+        # Кнопки внизу справа и слева
+        btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
+        btn_frame.place(relx=0.5, rely=0.85, anchor="center")
+
+        # Кнопка "Починить" (слева) - доступна только если свет еще не починен
+        if not self.solved_puzzle:
+            repair_btn = tk.Button(btn_frame, text="Починить серверную", 
+                                font=global_fonts['small'], bg='#4a8a4a', fg='white',
+                                command=lambda: WirePuzzle(self.parent, self.puzzle_complete_from_17),
+                                width=20, height=2)
+            repair_btn.pack(side="left", padx=10)
+        else:
+            # Если свет уже починен, показываем заглушку
+            repaired_label = tk.Label(btn_frame, text="✅ Свет починен", 
+                                    font=global_fonts['small'], bg='#228b22', fg='white',
+                                    width=20, height=2)
+            repaired_label.pack(side="left", padx=10)
+
+        # Кнопка "Выйти" (справа) - всегда доступна
+        exit_btn = tk.Button(btn_frame, text="Выйти из кабинета", 
+                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
+                            command=self.second_floor_2, width=20, height=2)
+        exit_btn.pack(side="right", padx=10)
+
+    def puzzle_complete_from_17(self):
+        self.solved_puzzle = True
+        self.room_17()  # Возвращаемся в кабинет с обновленным статусом
+
     def puzzle_complete(self):
         self.solved_puzzle = True
-        self.second_floor()
+        self.second_floor_2()
+
+    def puzzle_complete_from_1(self):
+        self.solved_puzzle = True
+        self.second_floor_1()  # Возвращаемся в первый коридор с обновленным фоном
+
+    def puzzle_complete_from_2(self):
+        self.solved_puzzle = True
+        self.second_floor_2()  # Возвращаемся во второй коридор с обновленным фоном
 
     def room_22(self):
         self.current_location = "room_22"
         self.clear_window()
 
         try:
-            img = Image.open("computer_class.png")
+            img = Image.open("class_22.png")
             img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
             self.bg_image = ImageTk.PhotoImage(img)
             canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
@@ -708,76 +852,160 @@ class Game:
         except:
             canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#2b2b2b")
             canvas.pack()
+            canvas.create_text(WINDOW_WIDTH//2, 50, text="КОМПЬЮТЕРНЫЙ КЛАСС",
+                            fill="white", font=global_fonts['large'])
 
-        canvas.create_text(WINDOW_WIDTH//2, 50, text="💻 КОМПЬЮТЕРНЫЙ КЛАСС 💻",
-                          fill="white", font=global_fonts['large'])
+        # Текст подсказки
+        hint_bg = tk.Frame(self.parent, bg='black', bd=2, relief="solid")
+        hint_bg.place(relx=0.5, rely=0.15, anchor="center")
+        
+        if len(self.password_parts) == 3:
+            hint_text = "✅ Все части пароля собраны! Можешь ввести пароль на 4 компьютере"
+        else:
+            hint_text = f"Собрано частей пароля: {len(self.password_parts)}/3"
+        
+        hint_label = tk.Label(hint_bg, text=hint_text,
+                            font=global_fonts['small'], bg='black', fg='#ffd700')
+        hint_label.pack(padx=20, pady=10)
 
+        # Кнопки для компьютеров
         btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
         btn_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Кнопки для компьютеров
+        # Компьютеры 1-3
         for i in range(1, 4):
             status = "✅" if f"part{i}" in self.password_parts else "⬜"
-            tk.Button(btn_frame, text=f"{status} Компьютер {i} (написать код)",
-                     font=global_fonts['small'], bg='#4a4a4a', fg='white',
-                     command=lambda x=i: self.computer_task(x), width=25, height=1).pack(pady=2)
+            btn = tk.Button(btn_frame, text=f"{status} Компьютер {i}",
+                        font=global_fonts['small'], bg='#4a4a4a', fg='white',
+                        command=lambda x=i: self.show_computer_task(x), width=20, height=1)
+            btn.pack(pady=2)
 
+        # Компьютер 4 (доступен только если собраны все части)
         if len(self.password_parts) == 3:
-            tk.Button(btn_frame, text="🔑 Компьютер 4 (ввести пароль)",
-                     font=global_fonts['small'], bg='#6b8e23', fg='white',
-                     command=self.enter_password, width=25, height=1).pack(pady=5)
+            tk.Button(btn_frame, text="Компьютер 4 (ввести пароль)",
+                    font=global_fonts['small'], bg='#6b8e23', fg='white',
+                    command=self.show_password_window, width=20, height=1).pack(pady=5)
+        else:
+            tk.Label(btn_frame, text="🔒 Компьютер 4 (заблокирован)", 
+                    font=global_fonts['small'], bg='black', fg='#888888', width=20).pack(pady=5)
 
-        # Ключ от музея
+        # Ключ от музея (отдельно)
         if not self.has_museum_key:
             tk.Button(btn_frame, text="🔍 Осмотреть стол (найти ключ от музея)",
-                     font=global_fonts['small'], bg='#b8860b', fg='white',
-                     command=self.find_museum_key, width=25, height=1).pack(pady=5)
+                    font=global_fonts['small'], bg='#b8860b', fg='white',
+                    command=self.find_museum_key, width=20, height=1).pack(pady=5)
 
-        tk.Button(btn_frame, text="◀ Вернуться в коридор", command=self.second_floor, **self.button_style).pack(pady=5)
+        # Кнопка выхода
+        tk.Button(btn_frame, text="Выйти из кабинета", 
+                font=global_fonts['small'], bg='#8a4a4a', fg='white',
+                command=self.second_floor_2, width=20, height=1).pack(pady=5)
+        
 
-        # Чат преподавателей
-        chat_frame = tk.Frame(self.parent, bg="white", bd=2, relief="solid")
-        chat_frame.place(relx=0.8, rely=0.2, anchor="center")
-
-        tk.Label(chat_frame, text="💬 Чат преподавателей:",
-                font=global_fonts['small'], bg="white").pack()
-        tk.Label(chat_frame, text="Иван Петрович: Куда ты положил ключ?",
-                font=global_fonts['small'], bg="white").pack()
-        tk.Label(chat_frame, text="Мария Ивановна: В кабинете на третьем этаже",
-                font=global_fonts['small'], bg="white").pack()
-
-    def computer_task(self, num):
-        if f"part{num}" not in self.password_parts:
-            self.password_parts.append(f"part{num}")
-            messagebox.showinfo("💻 Код написан", f"Ты написала код на компьютере {num}!\nПолучена часть пароля.")
-        else:
-            messagebox.showinfo("💻 Компьютер", "Здесь уже всё готово.")
-        self.room_22()
-
-    def enter_password(self):
-        password_window = tk.Toplevel(self.parent)
-        password_window.title("🔑 Введите пароль")
-        password_window.geometry("350x200")
-        password_window.configure(bg='#2a2a2a')
-
-        tk.Label(password_window, text="ВВЕДИТЕ ПАРОЛЬ",
+    def show_computer_task(self, computer_num):
+        """Показывает задание для компьютера"""
+        # Задания для каждого компьютера
+        tasks = {
+            1: {
+                "title": "Компьютер №1 - Задание по программированию",
+                "text": "В языке Python для вывода данных на экран используется функция ______",
+                "answer": "print",
+                "code_word": "PRINT",  # Кодовое слово (часть пароля)
+                "part": "part1"
+            },
+            2: {
+                "title": "Компьютер №2 - Задание по программированию",
+                "text": """while True:
+        x = input('Введите строку: ')
+        if x == 'стоп':
+            ______
+        print(x + x)""",
+                "answer": "break",
+                "code_word": "BREAK",  # Кодовое слово (часть пароля)
+                "part": "part2"
+            },
+            3: {
+                "title": "Компьютер №3 - Задание по программированию",
+                "text": """for i in range(5):
+        if i == 3:
+            ______
+        print(i)""",
+                "answer": "continue",
+                "code_word": "CONTINUE",  # Кодовое слово (часть пароля)
+                "part": "part3"
+            }
+        }
+        
+        task = tasks[computer_num]
+        
+        # Создаем окно для задания
+        task_window = tk.Toplevel(self.parent)
+        task_window.title(task["title"])
+        task_window.geometry("600x450")
+        task_window.configure(bg='#2a2a2a')
+        task_window.transient(self.parent)
+        task_window.grab_set()
+        
+        # Заголовок
+        tk.Label(task_window, text=f"КОМПЬЮТЕР №{computer_num}",
                 font=global_fonts['large'], bg='#2a2a2a', fg='#ffd700').pack(pady=10)
-        tk.Label(password_window, text="(части 1,2,3)",
-                font=global_fonts['small'], bg='#2a2a2a', fg='#888888').pack()
+        
+        # Текст задания с выравниванием по левому краю
+        text_frame = tk.Frame(task_window, bg='#3a3a3a', bd=2, relief="solid")
+        text_frame.pack(pady=10, padx=20, fill="both", expand=True)
+        
+        # Используем Text widget для лучшего отображения кода
+        text_widget = tk.Text(text_frame, font=Font(family="Courier", size=12),
+                            bg='#3a3a3a', fg='#00ff00',  # Зеленый текст как в терминале
+                            wrap="none", height=10, width=50, bd=0)
+        text_widget.pack(padx=10, pady=10, fill="both", expand=True)
+        text_widget.insert("1.0", task["text"])
+        text_widget.config(state="disabled")  # Делаем текст только для чтения
+        
+        # Поле для ввода ответа
+        answer_frame = tk.Frame(task_window, bg='#2a2a2a')
+        answer_frame.pack(pady=10)
+        
+        tk.Label(answer_frame, text="Ваш ответ:", 
+                font=global_fonts['small'], bg='#2a2a2a', fg='white').pack(side="left", padx=5)
+        
+        answer_entry = tk.Entry(answer_frame, width=20, font=global_fonts['small'])
+        answer_entry.pack(side="left", padx=5)
 
-        entry = tk.Entry(password_window, width=30, font=global_fonts['small'], show="*")
-        entry.pack(pady=10)
-
-        def check():
-            if entry.get() == "part1part2part3":
-                messagebox.showinfo("✅ Успех", "Пароль верный! Доступ к информации получен.")
-                password_window.destroy()
+        # Функция проверки ответа
+        def check_answer():
+            user_answer = answer_entry.get().lower().strip()
+            if user_answer == task["answer"]:
+                if task["part"] not in self.password_parts:
+                    self.password_parts.append(task["part"])
+                    # Сохраняем кодовое слово
+                    if not hasattr(self, 'code_words'):
+                        self.code_words = {}
+                    self.code_words[computer_num] = task["code_word"]
+                    
+                    messagebox.showinfo("✅ Правильно!", 
+                                    f"Отличная работа!\nТы получил кодовое слово: {task['code_word']}")
+                    task_window.destroy()
+                    self.room_22()  # Обновляем экран кабинета
+                else:
+                    messagebox.showinfo("ℹ️ Информация", 
+                                    "Ты уже решил это задание!")
+                    task_window.destroy()
             else:
-                messagebox.showerror("❌ Ошибка", "Неверный пароль!")
-
-        tk.Button(password_window, text="Проверить", font=global_fonts['small'],
-                 bg='#4a4a4a', fg='white', command=check).pack(pady=10)
-
+                messagebox.showerror("❌ Ошибка", 
+                                "Неправильный ответ! Попробуй еще раз.")
+        
+        # Кнопка проверки
+        check_btn = tk.Button(task_window, text="✅ Проверить", 
+                            font=global_fonts['small'], bg='#4a8a4a', fg='white',
+                            command=check_answer)
+        check_btn.pack(pady=10)
+        
+        # Кнопка закрытия
+        close_btn = tk.Button(task_window, text="✖ Закрыть", 
+                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
+                            command=task_window.destroy)
+        close_btn.pack(pady=5)
+    
     def find_museum_key(self):
         self.has_museum_key = True
         messagebox.showinfo("🔑 Находка", "Ты нашла ключ от музея на столе!")
@@ -791,10 +1019,146 @@ class Game:
         SphinxPuzzle(self.parent,
                     lambda: self.sphinx_success(),
                     lambda: self.death_ending())
+        
+
+    def show_password_window(self):
+        """Показывает окно для ввода пароля на 4 компьютере"""
+        password_window = tk.Toplevel(self.parent)
+        password_window.title("🔑 Компьютер №4 - Ввод пароля")
+        password_window.geometry("550x400")
+        password_window.configure(bg='#2a2a2a')
+        password_window.transient(self.parent)
+        password_window.grab_set()
+        
+        # Заголовок
+        tk.Label(password_window, text="🔑 КОМПЬЮТЕР №4 - ВВОД ПАРОЛЯ 🔑",
+                font=global_fonts['large'], bg='#2a2a2a', fg='#ffd700').pack(pady=10)
+        
+        # Информация о частях пароля
+        parts_frame = tk.Frame(password_window, bg='#3a3a3a', bd=2, relief="solid")
+        parts_frame.pack(pady=10, padx=20, fill="x")
+        
+        tk.Label(parts_frame, text="Полученные кодовые слова:",
+                font=global_fonts['small'], bg='#3a3a3a', fg='#ffd700').pack(pady=5)
+        
+        parts_text = ""
+        if "part1" in self.password_parts:
+            parts_text += f"✅ Компьютер 1: {self.code_words.get(1, 'PRINT')}\n"
+        else:
+            parts_text += "❌ Компьютер 1: не пройден\n"
+        
+        if "part2" in self.password_parts:
+            parts_text += f"✅ Компьютер 2: {self.code_words.get(2, 'BREAK')}\n"
+        else:
+            parts_text += "❌ Компьютер 2: не пройден\n"
+        
+        if "part3" in self.password_parts:
+            parts_text += f"✅ Компьютер 3: {self.code_words.get(3, 'CONTINUE')}\n"
+        else:
+            parts_text += "❌ Компьютер 3: не пройден\n"
+        
+        parts_label = tk.Label(parts_frame, text=parts_text,
+                            font=global_fonts['small'], bg='#3a3a3a', fg='white',
+                            justify="left")
+        parts_label.pack(pady=5, padx=20)
+        
+        # Подсказка
+        hint_frame = tk.Frame(password_window, bg='#2a2a2a')
+        hint_frame.pack(pady=5)
+        tk.Label(hint_frame, text="Подсказка: введите кодовые слова через пробел в порядке компьютеров (1 2 3)",
+                font=global_fonts['small'], bg='#2a2a2a', fg='#888888').pack()
+        
+        # Поле для ввода пароля
+        input_frame = tk.Frame(password_window, bg='#2a2a2a')
+        input_frame.pack(pady=20)
+        
+        tk.Label(input_frame, text="Введите кодовые слова через пробел:",
+                font=global_fonts['small'], bg='#2a2a2a', fg='white').pack()
+        
+        password_entry = tk.Entry(input_frame, width=30, font=global_fonts['large'])
+        password_entry.pack(pady=10)
+        
+        # Функция проверки пароля
+        def check_password():
+            # Ожидаемый пароль: кодовые слова
+            expected_words = []
+            if 1 in self.code_words:
+                expected_words.append(self.code_words[1])
+            if 2 in self.code_words:
+                expected_words.append(self.code_words[2])
+            if 3 in self.code_words:
+                expected_words.append(self.code_words[3])
+            
+            expected = " ".join(expected_words).lower()
+            user_input = password_entry.get().lower().strip()
+            
+            if user_input == expected:
+                messagebox.showinfo("✅ Успех!", "Пароль верный!")
+                password_window.destroy()
+                self.show_teacher_chat()
+            else:
+                messagebox.showerror("❌ Ошибка", "Неверный пароль! Попробуй еще раз.")
+        
+        # Кнопка проверки
+        check_btn = tk.Button(password_window, text="🔑 Проверить пароль", 
+                            font=global_fonts['large'], bg='#4a8a4a', fg='white',
+                            command=check_password)
+        check_btn.pack(pady=10)
+        
+        # Кнопка закрытия
+        close_btn = tk.Button(password_window, text="✖ Закрыть", 
+                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
+                            command=password_window.destroy)
+        close_btn.pack(pady=5)
+
+    def show_teacher_chat(self):
+        """Показывает окно с чатом преподавателей"""
+        chat_window = tk.Toplevel(self.parent)
+        chat_window.title("💬 Чат преподавателей")
+        chat_window.geometry("500x400")
+        chat_window.configure(bg='#2b2b2b')
+        chat_window.transient(self.parent)
+        chat_window.grab_set()
+        
+        # Заголовок
+        tk.Label(chat_window, text="💬 ЧАТ ПРЕПОДАВАТЕЛЕЙ 💬",
+                font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700').pack(pady=10)
+        
+        # Фрейм для сообщений
+        messages_frame = tk.Frame(chat_window, bg='#3b3b3b', bd=2, relief="solid")
+        messages_frame.pack(pady=10, padx=20, fill="both", expand=True)
+        
+        # Сообщения
+        messages = [
+            ("Ананас:", "Куда ты положил ключ от подвала?", "#4a6a8a"),
+            ("Зоркий глаз:", "В кабинете на третьем этаже, в столе.", "#6a4a8a"),
+            ("Ананас:", "Точно? А то студенты вечно теряют.", "#4a6a8a"),
+            ("Зоркий глаз:", "Да, под документами, во втором ящике.", "#6a4a8a"),
+        ]
+        
+        for i, (name, text, color) in enumerate(messages):
+            msg_frame = tk.Frame(messages_frame, bg='#3b3b3b')
+            msg_frame.pack(fill="x", padx=10, pady=5)
+            
+            name_label = tk.Label(msg_frame, text=name, 
+                                font=global_fonts['small'], bg=color, fg='white',
+                                width=20, height=1)
+            name_label.pack(side="left", padx=5)
+            
+            text_label = tk.Label(msg_frame, text=text,
+                                font=global_fonts['small'], bg='#4b4b4b', fg='white',
+                                wraplength=300, justify="left")
+            text_label.pack(side="left", padx=5, fill="x", expand=True)
+        
+        # Кнопка закрытия
+        close_btn = tk.Button(chat_window, text="✖ Закрыть чат", 
+                            font=global_fonts['large'], bg='#8a4a4a', fg='white',
+                            command=lambda: [chat_window.destroy(), self.room_22()])
+        close_btn.pack(pady=10)
 
     def sphinx_success(self):
         self.sphinx_passed = True
-        self.second_floor()
+        self.second_floor_2()
 
     def third_floor(self):
         self.current_location = "third_floor"
@@ -818,19 +1182,16 @@ class Game:
         btn_frame.place(relx=0.5, rely=0.4, anchor="center")
 
         # Кабинет на третьем этаже виден ТОЛЬКО если пройдены все кабинеты на втором этаже
-        # Проверяем, что все кабинеты на втором этаже пройдены
         all_second_floor_complete = self.solved_puzzle and self.has_museum_key and self.sphinx_passed
         
         if all_second_floor_complete:
             tk.Button(btn_frame, text="📁 Зайти в кабинет", command=self.find_key_room, **self.button_style).pack(pady=5)
         else:
-            # Показываем заглушку или просто не показываем кнопку
-            tk.Label(btn_frame, text="❌ Кабинет закрыт\n",
+            tk.Label(btn_frame, text="❌ Кабинет закрыт\n(нужно исследовать второй этаж)",
                     font=global_fonts['small'], bg='black', fg='#888888').pack(pady=5)
         
-        tk.Button(btn_frame, text="⬇ На второй этаж", command=self.second_floor, **self.button_style).pack(pady=5)
-        
-        # На третьем этаже НЕТ кнопки в подвал - только со второго!
+        tk.Button(btn_frame, text="⬇ Спуститься на второй этаж", 
+                 command=self.second_floor_1, **self.button_style).pack(pady=5)
 
     def find_key_room(self):
         DocumentViewer(self.parent, self.check_key)
@@ -890,12 +1251,12 @@ class Game:
                               text="🚫 ДВЕРЬ ЗАПЕРТА 🚫",
                               fill="red", font=global_fonts['large'])
 
-        # Кнопки возврата - можно вернуться ТОЛЬКО на 2 этаж
+        # Кнопка возврата на второй этаж (в начало коридора)
         btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
         btn_frame.place(relx=0.5, rely=0.8, anchor="center")
         
         tk.Button(btn_frame, text="⬆ На второй этаж", font=global_fonts['small'],
-                 bg='#4a4a4a', fg='white', command=self.second_floor, width=17).pack(side="left", padx=0)
+                 bg='#4a4a4a', fg='white', command=self.second_floor_1, width=17).pack(side="left", padx=0)
     
 
     def good_ending(self):
@@ -975,7 +1336,9 @@ class Game:
         """Возвращает название текущей локации"""
         locations = {
             "first_floor": "Первый этаж",
-            "second_floor": "Второй этаж",
+            "second_floor_1": "Второй этаж (начало коридора)",
+            "second_floor_2": "Второй этаж (основной коридор)",
+            "room_17": "Кабинет №17 (серверная)",
             "third_floor": "Третий этаж",
             "room_22": "Компьютерный класс",
             "basement": "Подвал",
@@ -1003,8 +1366,12 @@ class Game:
                 # Переходим на сохраненную локацию
                 if self.current_location == "first_floor":
                     self.first_floor()
-                elif self.current_location == "second_floor":
-                    self.second_floor()
+                elif self.current_location == "second_floor_1":
+                    self.second_floor_1()
+                elif self.current_location == "second_floor_2":
+                    self.second_floor_2()
+                elif self.current_location == "room_17":  # Добавлено ДО else
+                    self.room_17()
                 elif self.current_location == "third_floor":
                     self.third_floor()
                 elif self.current_location == "room_22":
@@ -1018,8 +1385,9 @@ class Game:
                 elif self.current_location == "death":
                     self.death_ending()
                 else:
-                    self.first_floor()  # По умолчанию
-
+                    self.first_floor()
+            
+                
         except FileNotFoundError:
             messagebox.showerror("❌ Ошибка", "Нет сохранённых файлов!")
         except Exception as e:
