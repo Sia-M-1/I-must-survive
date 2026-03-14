@@ -712,11 +712,14 @@ class Game:
         else:
             tk.Label(btn_frame, text="Другие кабинеты не видны в темноте", 
                     font=global_fonts['small'], bg='black', fg='#888888').pack(pady=5)
-
+# Кнопка в подвал - добавлена!
+        tk.Button(btn_frame, text="🏚 Спуститься в подвал", 
+                command=self.basement, **self.button_style).pack(pady=5)
+        
         # Кнопка возврата в начало коридора
         tk.Button(btn_frame, text="⬅ Вернуться в начало коридора", 
                  command=self.second_floor_1, **self.button_style).pack(pady=5)
-    
+        
     def room_17(self):
         self.current_location = "room_17"
         self.clear_window()
