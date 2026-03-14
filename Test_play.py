@@ -227,59 +227,7 @@ class WirePuzzle:
             return self.empty_image
         return self.images[self.board[index]]
 
-# Класс для загадок сфинкса
-class SphinxPuzzle:
-    def __init__(self, parent, on_success, on_fail):
-        self.parent = parent
-        self.on_success = on_success
-        self.on_fail = on_fail
-        self.questions = [
-            {"question": "Что можно увидеть с закрытыми глазами?", "answer": "сон"},
-            {"question": "Что становится больше, если его отдать?", "answer": "долг"},
-            {"question": "Что принадлежит вам, но другие пользуются этим чаще?", "answer": "имя"}
-        ]
-        self.current_question = 0
-        self.show_question()
 
-    def show_question(self):
-        self.question_window = tk.Toplevel(self.parent)
-        self.question_window.title("Загадка сфинкса")
-        self.question_window.geometry("600x400")
-        self.question_window.configure(bg='#2a1a2a')
-
-        # Заголовок
-        name_label = tk.Label(self.question_window, text="Ирина Идуардовна (андроид)",
-                            font=global_fonts['large'], bg='#2a1a2a', fg='#ff99ff')
-        name_label.pack(pady=20)
-
-        question_frame = tk.Frame(self.question_window, bg='#3a2a3a', padx=20, pady=20)
-        question_frame.pack(pady=20)
-
-        question_label = tk.Label(question_frame, text=self.questions[self.current_question]["question"],
-                                font=global_fonts['small'], bg='#3a2a3a', fg='white', wraplength=400)
-        question_label.pack()
-
-        self.answer_entry = tk.Entry(self.question_window, width=30, font=global_fonts['small'])
-        self.answer_entry.pack(pady=10)
-
-        tk.Button(self.question_window, text="📝 Ответить", font=global_fonts['small'],
-                  bg='#4a3a4a', fg='white', command=self.check_answer).pack(pady=10)
-
-    def check_answer(self):
-        answer = self.answer_entry.get().lower().strip()
-        if answer == self.questions[self.current_question]["answer"]:
-            self.current_question += 1
-            if self.current_question >= len(self.questions):
-                messagebox.showinfo("🎉 Успех! 🎉", "Ты ответил на все вопросы!\n")
-                self.question_window.destroy()
-                self.on_success()
-            else:
-                self.question_window.destroy()
-                self.show_question()
-        else:
-            messagebox.showerror("Ошибка!", "Неверный ответ... Сущность поглощает тебя!")
-            self.question_window.destroy()
-            self.on_fail()
 
 # Класс для просмотра документов
 class DocumentViewer:
@@ -501,6 +449,8 @@ class Game:
         self.has_basement_key = False
         self.sphinx_passed = False
         self.password_parts = []
+        self.code_words = {}
+        self.dialogue_stage = 0  # Добавить
         self.current_location = "prologue"
         
         self.clear_window()
@@ -1012,14 +962,257 @@ class Game:
         self.room_22()
 
     def museum(self):
+        """Вход в музей"""
         if not self.has_museum_key:
             messagebox.showinfo("🏛 Музей", "Дверь заперта. Нужен ключ.")
             return
-
-        SphinxPuzzle(self.parent,
-                    lambda: self.sphinx_success(),
-                    lambda: self.death_ending())
         
+        # Показываем закрытый музей
+        self.show_museum_closed()
+
+    def show_museum_closed(self):
+        """Показывает закрытый музей (темный)"""
+        self.current_location = "museum_closed"
+        self.clear_window()
+        
+        # Фон закрытого музея
+        try:
+            img = Image.open("museum_close.png")
+            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.bg_image = ImageTk.PhotoImage(img)
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
+            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
+            canvas.pack()
+        except:
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#2a1a2a")
+            canvas.pack()
+            canvas.create_text(WINDOW_WIDTH//2, 100, text="🏛 МУЗЕЙ (ЗАКРЫТ) 🏛",
+                            fill="white", font=global_fonts['large'])
+        
+        # Кнопки
+        btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
+        btn_frame.place(relx=0.5, rely=0.8, anchor="center")
+        
+        # Кнопка открыть музей
+        open_btn = tk.Button(btn_frame, text="🔓 Открыть музей (ключ есть)", 
+                            font=global_fonts['large'], bg='#4a8a4a', fg='white',
+                            command=self.show_museum_open, width=20, height=2)
+        open_btn.pack(pady=5)
+        
+        # Кнопка назад
+        back_btn = tk.Button(btn_frame, text="⬅ Назад в коридор", 
+                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
+                            command=self.second_floor_2, width=20, height=1)
+        back_btn.pack(pady=5)
+
+    def show_museum_open(self):
+        """Показывает открытый музей (светлый)"""
+        self.current_location = "museum_open"
+        self.clear_window()
+        
+        # Фон открытого музея
+        try:
+            img = Image.open("museum_open.png")
+            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.bg_image = ImageTk.PhotoImage(img)
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
+            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
+            canvas.pack()
+        except:
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#4a3a4a")
+            canvas.pack()
+            canvas.create_text(WINDOW_WIDTH//2, 100, text="🏛 МУЗЕЙ (ОТКРЫТ) 🏛",
+                            fill="white", font=global_fonts['large'])
+        
+        # Показываем диалог с андроидом
+        self.show_android_dialogue()
+        
+        # Кнопка выхода
+        exit_btn = tk.Button(self.parent, text="🚪 Выйти из музея", 
+                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
+                            command=self.second_floor_2, width=20, height=1)
+        exit_btn.place(relx=0.5, rely=0.9, anchor="center")
+            
+    def show_android_dialogue(self):
+        """Показывает диалоговое окно с андроидом"""
+        dialogue_window = tk.Toplevel(self.parent)
+        dialogue_window.title("Ирина Идуардовна (андроид)")
+        dialogue_window.geometry("400x500+550+50")  # Меньше размер и смещено вправо
+        dialogue_window.configure(bg='#2a1a2a')
+        dialogue_window.transient(self.parent)
+        dialogue_window.grab_set()
+        dialogue_window.resizable(False, False)  # Запрещаем изменение размера
+        
+        # Заголовок с именем
+        name_label = tk.Label(dialogue_window, text="🤖 Ирина Идуардовна 🤖",
+                            font=global_fonts['small'], bg='#2a1a2a', fg='#ff99ff')
+        name_label.pack(pady=10)
+        
+        # Фрейм для контента с прокруткой
+        main_frame = tk.Frame(dialogue_window, bg='#2a1a2a')
+        main_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        # Canvas для прокрутки
+        canvas = tk.Canvas(main_frame, bg='#3a2a3a', highlightthickness=0, height=350)
+        canvas.pack(side="left", fill="both", expand=True)
+        
+        # Scrollbar
+        scrollbar = tk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Настраиваем canvas
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Фрейм для контента внутри canvas
+        content_frame = tk.Frame(canvas, bg='#3a2a3a', bd=2, relief="solid")
+        canvas.create_window((0, 0), window=content_frame, anchor="nw", width=360)
+        
+        # Начинаем с первого этапа диалога, если загадки еще не пройдены
+        if not self.sphinx_passed:
+            self.dialogue_stage = 0
+        else:
+            self.dialogue_stage = 7
+        
+        self.dialogue_window = dialogue_window
+        self.dialogue_canvas = canvas
+        self.dialogue_content = content_frame
+        
+        self.update_android_dialogue()
+        
+        # Обновляем область прокрутки
+        content_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    def update_android_dialogue(self):
+        """Обновляет диалог с андроидом"""
+        # Очищаем фрейм
+        for widget in self.dialogue_content.winfo_children():
+            widget.destroy()
+        
+        # Создаем виджет для сообщения с переносом текста
+        def create_message(text):
+            msg_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
+            msg_frame.pack(fill="x", padx=10, pady=5)
+            
+            # Используем Label с wraplength для автоматического переноса
+            msg_label = tk.Label(msg_frame, text=text,
+                            font=global_fonts['small'], bg='#3a2a3a', fg='white',
+                            wraplength=320, justify="left")
+            msg_label.pack()
+        
+        # Создаем кнопку
+        def create_button(text, command, color='#4a6a8a'):
+            btn_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
+            btn_frame.pack(pady=10)
+            btn = tk.Button(btn_frame, text=text, 
+                        font=global_fonts['small'], bg=color, fg='white',
+                        command=command, width=15, height=1)
+            btn.pack()
+        
+        # Этапы диалога
+        if self.dialogue_stage == 0:
+            create_message("Наконец-то хоть кто-то включил свет! А то я так долго была без электричества...")
+            create_button("Далее →", self.next_dialogue_stage)
+        
+        elif self.dialogue_stage == 1:
+            create_message("Как ты сюда вообще смог пробраться? Охранник что, уснул?")
+            create_button("Далее →", self.next_dialogue_stage)
+        
+        elif self.dialogue_stage == 2:
+            create_message("Чтобы пройти дальше, тебе нужно будет отгадать загадки. Иначе тебя найдет сущность...")
+            create_button("Начать загадки →", self.start_riddles, '#4a8a4a')
+        
+        elif self.dialogue_stage >= 3 and self.dialogue_stage <= 5:
+            # Загадки
+            riddles = [
+                {
+                    "question": "Что можно увидеть с закрытыми глазами?",
+                    "answer": "сон"
+                },
+                {
+                    "question": "Что становится больше, если его отдать?",
+                    "answer": "долг"
+                },
+                {
+                    "question": "Что принадлежит вам, но другие пользуются этим чаще?",
+                    "answer": "имя"
+                }
+            ]
+            
+            riddle_index = self.dialogue_stage - 3
+            riddle = riddles[riddle_index]
+            
+            create_message(f"Загадка {riddle_index + 1}:")
+            create_message(riddle['question'])
+            
+            # Поле для ответа
+            answer_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
+            answer_frame.pack(pady=10)
+            
+            tk.Label(answer_frame, text="Ответ:", 
+                    font=global_fonts['small'], bg='#3a2a3a', fg='white').pack(side="left", padx=5)
+            
+            answer_entry = tk.Entry(answer_frame, width=15, font=global_fonts['small'])
+            answer_entry.pack(side="left", padx=5)
+            answer_entry.focus_set()
+            
+            # Сообщение об ошибке (изначально скрыто)
+            error_label = tk.Label(self.dialogue_content, text="",
+                                font=global_fonts['small'], bg='#3a2a3a', fg='#ff6666',
+                                wraplength=320)
+            error_label.pack(pady=5)
+            
+            # Функция проверки ответа
+            def check_riddle_answer(entry=answer_entry, error=error_label):
+                user_answer = entry.get().lower().strip()
+                if user_answer == riddle["answer"]:
+                    # Показываем сообщение об успехе в том же окне
+                    for widget in self.dialogue_content.winfo_children():
+                        if isinstance(widget, tk.Frame) and widget != answer_frame:
+                            pass
+                    
+                    success_label = tk.Label(self.dialogue_content, 
+                                            text="✅ Правильно! Молодец!",
+                                            font=global_fonts['small'], bg='#3a2a3a', fg='#4aff4a',
+                                            wraplength=320)
+                    success_label.pack(pady=5)
+                    
+                    # Переходим к следующему этапу через 1 секунду
+                    self.dialogue_content.after(1000, self.next_dialogue_stage)
+                else:
+                    error.config(text="❌ Неправильно! Попробуй еще раз.")
+            
+            # Кнопка ответить
+            tk.Button(self.dialogue_content, text="📝 Ответить", 
+                    font=global_fonts['small'], bg='#4a8a4a', fg='white',
+                    command=check_riddle_answer, width=15).pack(pady=5)
+        
+        elif self.dialogue_stage == 6:
+            create_message("А ты молодец! Не ожидала, что справишься со всеми загадками!")
+            self.sphinx_passed = True
+            create_button("Далее →", self.next_dialogue_stage)
+        
+        elif self.dialogue_stage == 7:
+            create_message("Ну ладно, ищи выход дальше. Удачи!")
+            create_button("✖ Закрыть", self.dialogue_window.destroy, '#8a4a4a')
+        
+        # Обновляем область прокрутки
+        self.dialogue_content.update_idletasks()
+        self.dialogue_canvas.configure(scrollregion=self.dialogue_canvas.bbox("all"))
+        # Прокручиваем вниз
+        self.dialogue_canvas.yview_moveto(1.0)
+
+    def next_dialogue_stage(self):
+        """Переход к следующему этапу диалога"""
+        self.dialogue_stage += 1
+        # Если дошли до этапа после загадок, убеждаемся что sphinx_passed = True
+        if self.dialogue_stage > 5:  # После всех загадок
+            self.sphinx_passed = True
+        self.update_android_dialogue()
+
+    def start_riddles(self):
+        """Начинает загадки"""
+        self.dialogue_stage = 3  # Переходим к первой загадке
+        self.update_android_dialogue()
 
     def show_password_window(self):
         """Показывает окно для ввода пароля на 4 компьютере"""
@@ -1156,9 +1349,6 @@ class Game:
                             command=lambda: [chat_window.destroy(), self.room_22()])
         close_btn.pack(pady=10)
 
-    def sphinx_success(self):
-        self.sphinx_passed = True
-        self.second_floor_2()
 
     def third_floor(self):
         self.current_location = "third_floor"
@@ -1177,6 +1367,8 @@ class Game:
 
         canvas.create_text(WINDOW_WIDTH//2, 50, text="⬆ ТРЕТИЙ ЭТАЖ ⬆",
                           fill="white", font=global_fonts['large'])
+
+    
 
         btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
         btn_frame.place(relx=0.5, rely=0.4, anchor="center")
@@ -1323,7 +1515,9 @@ class Game:
             "has_basement_key": self.has_basement_key,
             "sphinx_passed": self.sphinx_passed,
             "password_parts": self.password_parts,
-            "current_location": self.current_location
+            "code_words": self.code_words,
+            "current_location": self.current_location,
+            "dialogue_stage": getattr(self, 'dialogue_stage', 0)  # Добавить
         }
         try:
             with open("save.json", "w", encoding='utf-8') as f:
@@ -1339,8 +1533,10 @@ class Game:
             "second_floor_1": "Второй этаж (начало коридора)",
             "second_floor_2": "Второй этаж (основной коридор)",
             "room_17": "Кабинет №17 (серверная)",
-            "third_floor": "Третий этаж",
             "room_22": "Компьютерный класс",
+            "museum_closed": "Музей (закрыт)",
+            "museum_open": "Музей (открыт)",
+            "third_floor": "Третий этаж",
             "basement": "Подвал",
             "main_menu": "Главное меню",
             "prologue": "Пролог",
@@ -1359,7 +1555,9 @@ class Game:
                 self.has_basement_key = saved_data["has_basement_key"]
                 self.sphinx_passed = saved_data["sphinx_passed"]
                 self.password_parts = saved_data["password_parts"]
+                self.code_words = saved_data.get("code_words", {})
                 self.current_location = saved_data.get("current_location", "first_floor")
+                self.dialogue_stage = saved_data.get("dialogue_stage", 0)  # Добавить
                 
                 messagebox.showinfo("💾 Загрузка", f"Игра успешно загружена!\nПродолжаем с: {self.get_location_name()}")
                 
@@ -1372,6 +1570,10 @@ class Game:
                     self.second_floor_2()
                 elif self.current_location == "room_17":  # Добавлено ДО else
                     self.room_17()
+                elif self.current_location == "museum_closed":
+                    self.show_museum_closed()
+                elif self.current_location == "museum_open":
+                    self.show_museum_open()
                 elif self.current_location == "third_floor":
                     self.third_floor()
                 elif self.current_location == "room_22":
