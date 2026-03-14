@@ -230,118 +230,195 @@ class WirePuzzle:
 
 
 # Класс для просмотра документов
+# Класс для просмотра документов
 class DocumentViewer:
     def __init__(self, parent, on_choice):
         self.parent = parent
         self.on_choice = on_choice
         self.viewer_window = tk.Toplevel(parent)
-        self.viewer_window.title("Документы")
-        self.viewer_window.geometry("700x500")
+        self.viewer_window.title("Документы на столе")
+        self.viewer_window.geometry("800x600+500+100")  # Увеличил размер и сместил
         self.viewer_window.configure(bg='#2b2b2b')
-
+        self.viewer_window.transient(parent)
+        self.viewer_window.grab_set()
+        self.viewer_window.resizable(False, False)
+        
         # Заголовок
-        title_label = tk.Label(self.viewer_window, text="ТРИ ДОКУМЕНТА НА СТОЛЕ",
-                            font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700')
+        title_label = tk.Label(self.viewer_window, text="📄 ТРИ ДОКУМЕНТА НА СТОЛЕ 📄",
+                              font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700')
         title_label.pack(pady=10)
-
-        # Создаем фрейм для документов с прокруткой
-        container = tk.Frame(self.viewer_window, bg='#3b3b3b')
-        container.pack(fill="both", expand=True, padx=20, pady=20)
-
-        # Canvas для прокрутки
-        canvas = tk.Canvas(container, bg='#3b3b3b', highlightthickness=0)
-        canvas.pack(side="top", fill="both", expand=True)
-
-        # Горизонтальный скроллбар
-        scrollbar = tk.Scrollbar(container, orient="horizontal", command=canvas.xview)
-        scrollbar.pack(side="bottom", fill="x")
-
-        # Настраиваем canvas
-        canvas.configure(xscrollcommand=scrollbar.set)
-
-        # Фрейм внутри canvas для документов
-        docs_frame = tk.Frame(canvas, bg='#3b3b3b')
-        canvas.create_window((0, 0), window=docs_frame, anchor="nw")
-
-        # Три документа
+        
+        # Основной фрейм
+        main_frame = tk.Frame(self.viewer_window, bg='#2b2b2b')
+        main_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # Фрейм для документов
+        docs_frame = tk.Frame(main_frame, bg='#3b3b3b')
+        docs_frame.pack(pady=10, fill="both", expand=True)
+        
+        # Три документа в ряд
+        docs_container = tk.Frame(docs_frame, bg='#3b3b3b')
+        docs_container.pack(expand=True)
+        
+        self.document_frames = []
+        self.document_labels = []
+        self.choice_made = False  # Флаг, чтобы предотвратить повторный выбор
+        
         for i in range(1, 4):
-            doc_frame = tk.Frame(docs_frame, bg='#4b4b4b', relief="raised", bd=3)
-            doc_frame.pack(side="left", padx=10, pady=10)
-
+            doc_frame = tk.Frame(docs_container, bg='#4b4b4b', relief="raised", bd=3)
+            doc_frame.pack(side="left", padx=15, pady=20)
+            self.document_frames.append(doc_frame)
+            
+            # Заголовок документа
+            tk.Label(doc_frame, text=f"ДОКУМЕНТ {i}", 
+                    font=global_fonts['small'], bg='#4b4b4b', fg='#ffd700').pack(pady=5)
+            
             # Изображение документа
             try:
                 img = Image.open(f"document_{i}.png")
-                img = img.resize((180, 200))
+                # Уменьшаем изображение для компактности
+                img = img.resize((200, 250), Image.Resampling.LANCZOS)
                 doc_img = ImageTk.PhotoImage(img)
                 img_label = tk.Label(doc_frame, image=doc_img, bg='#4b4b4b')
-                img_label.image = doc_img
-                img_label.pack(pady=10)
-            except:
-                # Замещающий текст
-                text_label = tk.Label(doc_frame, text=f"ДОКУМЕНТ {i}\n\n[Здесь должно быть изображение документа]",
-                                    font=global_fonts['small'], bg='#4b4b4b', fg='white')
-                text_label.pack(pady=20)
-
-            # Кнопки для документа
+                img_label.image = doc_img  # Сохраняем ссылку
+                img_label.pack(pady=10, padx=10)
+                self.document_labels.append(img_label)
+            except Exception as e:
+                print(f"Ошибка загрузки документа {i}: {e}")
+                # Замещающий текст с описанием
+                text_frame = tk.Frame(doc_frame, bg='#5b5b5b', width=200, height=250)
+                text_frame.pack(pady=10, padx=10)
+                text_frame.pack_propagate(False)
+                
+                if i == 2:
+                    text = "ВАЖНЫЙ ДОКУМЕНТ\n\nЭто титульный лист!\nПод ним лежит ключ."
+                else:
+                    text = f"Обычный документ {i}\n\nЗдесь нет ничего\nинтересного..."
+                
+                tk.Label(text_frame, text=text, 
+                        font=global_fonts['small'], bg='#5b5b5b', fg='white',
+                        justify="center").pack(expand=True)
+            
+            # Кнопки под документом
             btn_frame = tk.Frame(doc_frame, bg='#4b4b4b')
             btn_frame.pack(pady=10)
-
-            # Фиксируем значение i для каждой кнопки (чтобы избежать проблемы с lambda)
-            doc_num = i
-
-            tk.Button(btn_frame, text="Просмотреть", font=global_fonts['small'],
-                bg='#5b5b5b', fg='white', command=lambda x=doc_num: self.view_document(x)).pack(side="left", padx=5)
-
-            tk.Button(btn_frame, text="✅ Выбрать", font=global_fonts['small'],
-                bg='#6b8e23', fg='white', command=lambda x=doc_num: self.choose_document(x)).pack(side="left", padx=5)
-
-        # Обновляем область прокрутки
-        docs_frame.update_idletasks()
-        canvas.config(scrollregion=canvas.bbox("all"))
+            
+            # Кнопка просмотра
+            view_btn = tk.Button(btn_frame, text="👁️ Просмотреть", 
+                               font=global_fonts['small'], bg='#5b5b5b', fg='white',
+                               command=lambda x=i: self.view_document(x))
+            view_btn.pack(side="left", padx=5)
+            
+            # Кнопка выбора
+            choose_btn = tk.Button(btn_frame, text="✅ Выбрать", 
+                                 font=global_fonts['small'], bg='#6b8e23', fg='white',
+                                 command=lambda x=i: self.choose_document(x))
+            choose_btn.pack(side="left", padx=5)
+        
+        # Фрейм для сообщения
+        message_frame = tk.Frame(main_frame, bg='#2b2b2b', height=60)
+        message_frame.pack(pady=10, fill="x")
+        message_frame.pack_propagate(False)
+        
+        self.message_label = tk.Label(message_frame, text="",
+                                     font=global_fonts['small'], bg='#2b2b2b', fg='white',
+                                     wraplength=700)
+        self.message_label.pack(expand=True)
+        
+        # Кнопка закрытия
+        close_btn = tk.Button(main_frame, text="✖ Закрыть", 
+                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
+                            command=self.viewer_window.destroy, width=15, height=1)
+        close_btn.pack(pady=10)
 
     def view_document(self, num):
+        """Просмотр документа в увеличенном виде"""
+        if self.choice_made:
+            return
+            
         view_window = tk.Toplevel(self.viewer_window)
         view_window.title(f"Документ {num}")
-        view_window.geometry("500x600")
+        view_window.geometry("600x700+600+150")
         view_window.configure(bg='#f4e4c1')
-
-        # Контент документа
+        view_window.transient(self.viewer_window)
+        view_window.grab_set()
+        view_window.resizable(False, False)
+        
+        # Заголовок
         tk.Label(view_window, text=f"ДОКУМЕНТ №{num}",
-            font=global_fonts['large'], bg='#f4e4c1', fg='#8b4513').pack(pady=10)
-
+                font=global_fonts['large'], bg='#f4e4c1', fg='#8b4513').pack(pady=15)
+        
+        # Контент документа
+        content_frame = tk.Frame(view_window, bg='#fff4e0', bd=2, relief="solid")
+        content_frame.pack(pady=10, padx=20, fill="both", expand=True)
+        
         try:
             # Пытаемся открыть картинку
             img = Image.open(f"document_{num}.png")
-            
             # Увеличиваем размер для просмотра
-            img = img.resize((450, 500), Image.Resampling.LANCZOS)
+            img = img.resize((500, 550), Image.Resampling.LANCZOS)
             doc_img = ImageTk.PhotoImage(img)
             
-            img_label = tk.Label(view_window, image=doc_img, bg='#f4e4c1')
+            img_label = tk.Label(content_frame, image=doc_img, bg='#fff4e0')
             img_label.image = doc_img
             img_label.pack(pady=10, padx=10)
         
         except Exception as e:
             print(f"Ошибка загрузки документа {num}: {e}")
             # Если картинка не найдена, показываем текст
-            text_widget = tk.Text(view_window, wrap="word", font=Font(family="Courier", size=12),
-                             bg='#fff4e0', fg='#000000', padx=20, pady=20)
+            text_widget = tk.Text(content_frame, wrap="word", font=Font(family="Courier", size=12),
+                                 bg='#fff4e0', fg='#000000', padx=20, pady=20)
             text_widget.pack(expand=True, fill="both", padx=20, pady=20)
 
             if num == 2:
-                text_widget.insert("1.0", "Это важный документ!\n\nПод ним лежит ключ от подвала.")
+                text_widget.insert("1.0", "ТИТУЛЬНЫЙ ЛИСТ\n\n" + 
+                                  "Это важный документ!\n\n" +
+                                  "Под ним лежит ключ от запасного выхода.\n\n" +
+                                  "Нужно выбрать именно этот документ!")
             else:
-                text_widget.insert("1.0", f"Обычный документ №{num}\n\nЗдесь нет ничего интересного...")
+                text_widget.insert("1.0", f"ОБЫЧНЫЙ ДОКУМЕНТ №{num}\n\n" +
+                                  "Здесь нет ничего интересного...\n\n" +
+                                  "Это не титульный лист.")
             text_widget.config(state="disabled")
         
         # Кнопка закрытия
         tk.Button(view_window, text="✖ Закрыть", font=global_fonts['small'],
-             bg='#8b4513', fg='white', command=view_window.destroy).pack(pady=10)
+                bg='#8b4513', fg='white', command=view_window.destroy,
+                width=15, height=1).pack(pady=15)
 
     def choose_document(self, num):
-        if messagebox.askyesno("Подтверждение", f"Точно выбрать документ {num}?"):
-            self.viewer_window.destroy()
-            self.on_choice(num)
+        """Выбор документа"""
+        if self.choice_made:
+            return
+            
+        self.choice_made = True
+        
+        if num == 2:  # Правильный документ
+            self.message_label.config(text="✅ Правильно! Это титульный лист! Ключ от запасного выхода твой!",
+                                    fg='#4aff4a')
+            # Блокируем все кнопки
+            for frame in self.document_frames:
+                for child in frame.winfo_children():
+                    if isinstance(child, tk.Frame):
+                        for btn in child.winfo_children():
+                            if isinstance(btn, tk.Button):
+                                btn.config(state="disabled", bg='#6a6a6a')
+            
+            # Передаем результат через 1.5 секунды
+            self.viewer_window.after(1500, lambda: [self.viewer_window.destroy(), self.on_choice(num)])
+        else:
+            self.message_label.config(text="❌ Неправильно! Это обычный документ... Сущность приближается!",
+                                    fg='#ff6666')
+            # Блокируем все кнопки
+            for frame in self.document_frames:
+                for child in frame.winfo_children():
+                    if isinstance(child, tk.Frame):
+                        for btn in child.winfo_children():
+                            if isinstance(btn, tk.Button):
+                                btn.config(state="disabled", bg='#6a6a6a')
+            
+            # Смерть через 2 секунды
+            self.viewer_window.after(2000, lambda: [self.viewer_window.destroy(), self.on_choice(num)])
             
 # Основной класс игры
 class Game:
@@ -865,10 +942,10 @@ class Game:
             2: {
                 "title": "Компьютер №2 - Задание по программированию",
                 "text": """while True:
-        x = input('Введите строку: ')
-        if x == 'стоп':
-            ______
-        print(x + x)""",
+                x = input('Введите строку: ')
+                if x == 'стоп':
+                    ______
+                print(x + x)""",
                 "answer": "break",
                 "code_word": "BREAK",  # Кодовое слово (часть пароля)
                 "part": "part2"
@@ -876,9 +953,9 @@ class Game:
             3: {
                 "title": "Компьютер №3 - Задание по программированию",
                 "text": """for i in range(5):
-        if i == 3:
-            ______
-        print(i)""",
+                if i == 3:
+                    ______
+                print(i)""",
                 "answer": "continue",
                 "code_word": "CONTINUE",  # Кодовое слово (часть пароля)
                 "part": "part3"
@@ -890,40 +967,72 @@ class Game:
         # Создаем окно для задания
         task_window = tk.Toplevel(self.parent)
         task_window.title(task["title"])
-        task_window.geometry("600x450")
+        task_window.geometry("600x500+800+100")  # Смещено вправо
         task_window.configure(bg='#2a2a2a')
         task_window.transient(self.parent)
         task_window.grab_set()
+        task_window.resizable(False, False)  # Запрещаем изменение размера
         
         # Заголовок
         tk.Label(task_window, text=f"КОМПЬЮТЕР №{computer_num}",
                 font=global_fonts['large'], bg='#2a2a2a', fg='#ffd700').pack(pady=10)
         
+        # Основной фрейм
+        main_frame = tk.Frame(task_window, bg='#2a2a2a')
+        main_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        
         # Текст задания с выравниванием по левому краю
-        text_frame = tk.Frame(task_window, bg='#3a3a3a', bd=2, relief="solid")
-        text_frame.pack(pady=10, padx=20, fill="both", expand=True)
+        text_frame = tk.Frame(main_frame, bg='#3a3a3a', bd=2, relief="solid")
+        text_frame.pack(pady=5, padx=10, fill="both", expand=True)
         
         # Используем Text widget для лучшего отображения кода
         text_widget = tk.Text(text_frame, font=Font(family="Courier", size=12),
                             bg='#3a3a3a', fg='#00ff00',  # Зеленый текст как в терминале
-                            wrap="none", height=10, width=50, bd=0)
+                            wrap="none", height=8, width=50, bd=0)
         text_widget.pack(padx=10, pady=10, fill="both", expand=True)
         text_widget.insert("1.0", task["text"])
         text_widget.config(state="disabled")  # Делаем текст только для чтения
         
-        # Поле для ввода ответа
-        answer_frame = tk.Frame(task_window, bg='#2a2a2a')
-        answer_frame.pack(pady=10)
+        # Фрейм для ввода ответа
+        input_frame = tk.Frame(main_frame, bg='#2a2a2a')
+        input_frame.pack(pady=10)
         
-        tk.Label(answer_frame, text="Ваш ответ:", 
+        tk.Label(input_frame, text="Ваш ответ:", 
                 font=global_fonts['small'], bg='#2a2a2a', fg='white').pack(side="left", padx=5)
         
-        answer_entry = tk.Entry(answer_frame, width=20, font=global_fonts['small'])
+        answer_entry = tk.Entry(input_frame, width=20, font=global_fonts['small'])
         answer_entry.pack(side="left", padx=5)
+        
+        # Фрейм для сообщений (результат будет显示在这里)
+        message_frame = tk.Frame(main_frame, bg='#2a2a2a', height=50)
+        message_frame.pack(pady=5, fill="x")
+        message_frame.pack_propagate(False)
+        
+        message_label = tk.Label(message_frame, text="",
+                                font=global_fonts['small'], bg='#2a2a2a', fg='white',
+                                wraplength=500)
+        message_label.pack(expand=True)
+
+        # Кнопки
+        button_frame = tk.Frame(main_frame, bg='#2a2a2a')
+        button_frame.pack(pady=5)
+        
+        # Кнопка проверки
+        check_btn = tk.Button(button_frame, text="✅ Проверить", 
+                            font=global_fonts['small'], bg='#4a8a4a', fg='white',
+                            command=None, width=15, height=1)
+        check_btn.pack(side="left", padx=5)
+        
+        # Кнопка закрытия
+        close_btn = tk.Button(button_frame, text="✖ Закрыть", 
+                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
+                            command=task_window.destroy, width=15, height=1)
+        close_btn.pack(side="left", padx=5)
 
         # Функция проверки ответа
         def check_answer():
             user_answer = answer_entry.get().lower().strip()
+            
             if user_answer == task["answer"]:
                 if task["part"] not in self.password_parts:
                     self.password_parts.append(task["part"])
@@ -932,30 +1041,41 @@ class Game:
                         self.code_words = {}
                     self.code_words[computer_num] = task["code_word"]
                     
-                    messagebox.showinfo("✅ Правильно!", 
-                                    f"Отличная работа!\nТы получил кодовое слово: {task['code_word']}")
-                    task_window.destroy()
-                    self.room_22()  # Обновляем экран кабинета
+                    # Показываем сообщение об успехе
+                    message_label.config(text=f"✅ Правильно!\nПолучено кодовое слово: {task['code_word']}", 
+                                    fg='#4aff4a')
+                    
+                    # Блокируем поле ввода
+                    answer_entry.config(state="disabled")
+                    
+                    # Делаем кнопку проверки неактивной
+                    check_btn.config(state="disabled", bg='#6a6a6a')
+                    
+                    # Убираем кнопку закрытия (делаем неактивной и скрываем)
+                    close_btn.config(state="disabled", bg='#6a6a6a')
+                    
+                    # Закрываем окно через 1 секунду
+                    task_window.after(1000, lambda: [task_window.destroy(), self.room_22()])
                 else:
-                    messagebox.showinfo("ℹ️ Информация", 
-                                    "Ты уже решил это задание!")
-                    task_window.destroy()
+                    message_label.config(text="ℹ️ Ты уже решил это задание!", fg='#ffd700')
+                    # Блокируем все
+                    answer_entry.config(state="disabled")
+                    check_btn.config(state="disabled", bg='#6a6a6a')
+                    close_btn.config(state="disabled", bg='#6a6a6a')
+                    task_window.after(1000, task_window.destroy)
             else:
-                messagebox.showerror("❌ Ошибка", 
-                                "Неправильный ответ! Попробуй еще раз.")
+                message_label.config(text="❌ Неправильный ответ! Попробуй еще раз.", fg='#ff6666')
+                answer_entry.delete(0, tk.END)  # Очищаем поле ввода
         
-        # Кнопка проверки
-        check_btn = tk.Button(task_window, text="✅ Проверить", 
-                            font=global_fonts['small'], bg='#4a8a4a', fg='white',
-                            command=check_answer)
-        check_btn.pack(pady=10)
+        # Назначаем команду для кнопки проверки
+        check_btn.config(command=check_answer)
         
-        # Кнопка закрытия
-        close_btn = tk.Button(task_window, text="✖ Закрыть", 
-                            font=global_fonts['small'], bg='#8a4a4a', fg='white',
-                            command=task_window.destroy)
-        close_btn.pack(pady=5)
-    
+        # Центрируем окно на экране
+        task_window.update_idletasks()
+        x = (task_window.winfo_screenwidth() - task_window.winfo_width()) // 2
+        y = (task_window.winfo_screenheight() - task_window.winfo_height()) // 2
+        task_window.geometry(f"+{x}+{y}")
+
     def find_museum_key(self):
         self.has_museum_key = True
         messagebox.showinfo("🔑 Находка", "Ты нашла ключ от музея на столе!")
@@ -1037,7 +1157,7 @@ class Game:
         """Показывает диалоговое окно с андроидом"""
         dialogue_window = tk.Toplevel(self.parent)
         dialogue_window.title("Ирина Идуардовна (андроид)")
-        dialogue_window.geometry("400x500+550+50")  # Меньше размер и смещено вправо
+        dialogue_window.geometry("400x350+850+50")  # Меньше размер и смещено вправо
         dialogue_window.configure(bg='#2a1a2a')
         dialogue_window.transient(self.parent)
         dialogue_window.grab_set()
@@ -1091,7 +1211,7 @@ class Game:
         # Создаем виджет для сообщения с переносом текста
         def create_message(text):
             msg_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
-            msg_frame.pack(fill="x", padx=10, pady=5)
+            msg_frame.pack(fill="x", padx=10, pady=3)
             
             # Используем Label с wraplength для автоматического переноса
             msg_label = tk.Label(msg_frame, text=text,
@@ -1102,7 +1222,7 @@ class Game:
         # Создаем кнопку
         def create_button(text, command, color='#4a6a8a'):
             btn_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
-            btn_frame.pack(pady=10)
+            btn_frame.pack(pady=5)
             btn = tk.Button(btn_frame, text=text, 
                         font=global_fonts['small'], bg=color, fg='white',
                         command=command, width=15, height=1)
@@ -1139,14 +1259,14 @@ class Game:
             ]
             
             riddle_index = self.dialogue_stage - 3
-            riddle = riddles[riddle_index]
+            current_riddle = riddles[riddle_index]  # Сохраняем текущую загадку в отдельную переменную
             
             create_message(f"Загадка {riddle_index + 1}:")
-            create_message(riddle['question'])
+            create_message(current_riddle['question'])
             
             # Поле для ответа
             answer_frame = tk.Frame(self.dialogue_content, bg='#3a2a3a')
-            answer_frame.pack(pady=10)
+            answer_frame.pack(pady=5)
             
             tk.Label(answer_frame, text="Ответ:", 
                     font=global_fonts['small'], bg='#3a2a3a', fg='white').pack(side="left", padx=5)
@@ -1159,32 +1279,42 @@ class Game:
             error_label = tk.Label(self.dialogue_content, text="",
                                 font=global_fonts['small'], bg='#3a2a3a', fg='#ff6666',
                                 wraplength=320)
-            error_label.pack(pady=5)
+            error_label.pack(pady=2)
             
-            # Функция проверки ответа
-            def check_riddle_answer(entry=answer_entry, error=error_label):
-                user_answer = entry.get().lower().strip()
-                if user_answer == riddle["answer"]:
-                    # Показываем сообщение об успехе в том же окне
-                    for widget in self.dialogue_content.winfo_children():
-                        if isinstance(widget, tk.Frame) and widget != answer_frame:
-                            pass
+            # Переменная для отслеживания, был ли уже дан ответ
+            answered = [False]  # Используем список для изменяемого объекта
+            
+            # Функция проверки ответа для конкретной загадки
+            def create_check_function(riddle, entry, error, answered_flag):
+                def check():
+                    if answered_flag[0]:  # Если уже ответили, ничего не делаем
+                        return
                     
-                    success_label = tk.Label(self.dialogue_content, 
-                                            text="✅ Правильно! Молодец!",
-                                            font=global_fonts['small'], bg='#3a2a3a', fg='#4aff4a',
-                                            wraplength=320)
-                    success_label.pack(pady=5)
-                    
-                    # Переходим к следующему этапу через 1 секунду
-                    self.dialogue_content.after(1000, self.next_dialogue_stage)
-                else:
-                    error.config(text="❌ Неправильно! Попробуй еще раз.")
+                    user_answer = entry.get().lower().strip()
+                    if user_answer == riddle["answer"]:
+                        answered_flag[0] = True
+                        # Показываем сообщение об успехе
+                        success_label = tk.Label(self.dialogue_content, 
+                                                text="✅ Правильно! Молодец!",
+                                                font=global_fonts['small'], bg='#3a2a3a', fg='#4aff4a',
+                                                wraplength=320)
+                        success_label.pack(pady=2)
+                        
+                        # Блокируем поле ввода
+                        entry.config(state="disabled")
+                        
+                        # Переходим к следующему этапу через 1 секунду
+                        self.dialogue_content.after(1000, self.next_dialogue_stage)
+                    else:
+                        error.config(text="❌ Неправильно! Попробуй еще раз.")
+                return check
             
             # Кнопка ответить
-            tk.Button(self.dialogue_content, text="📝 Ответить", 
-                    font=global_fonts['small'], bg='#4a8a4a', fg='white',
-                    command=check_riddle_answer, width=15).pack(pady=5)
+            check_btn = tk.Button(self.dialogue_content, text="📝 Ответить", 
+                                font=global_fonts['small'], bg='#4a8a4a', fg='white',
+                                command=create_check_function(current_riddle, answer_entry, error_label, answered),
+                                width=15)
+            check_btn.pack(pady=5)
         
         elif self.dialogue_stage == 6:
             create_message("А ты молодец! Не ожидала, что справишься со всеми загадками!")
@@ -1218,10 +1348,11 @@ class Game:
         """Показывает окно для ввода пароля на 4 компьютере"""
         password_window = tk.Toplevel(self.parent)
         password_window.title("🔑 Компьютер №4 - Ввод пароля")
-        password_window.geometry("550x400")
+        password_window.geometry("550x450+800+100")
         password_window.configure(bg='#2a2a2a')
         password_window.transient(self.parent)
         password_window.grab_set()
+        password_window.resizable(False, False)
         
         # Заголовок
         tk.Label(password_window, text="🔑 КОМПЬЮТЕР №4 - ВВОД ПАРОЛЯ 🔑",
@@ -1263,13 +1394,23 @@ class Game:
         
         # Поле для ввода пароля
         input_frame = tk.Frame(password_window, bg='#2a2a2a')
-        input_frame.pack(pady=20)
+        input_frame.pack(pady=10)
         
         tk.Label(input_frame, text="Введите кодовые слова через пробел:",
                 font=global_fonts['small'], bg='#2a2a2a', fg='white').pack()
         
         password_entry = tk.Entry(input_frame, width=30, font=global_fonts['large'])
         password_entry.pack(pady=10)
+        
+        # Фрейм для сообщений
+        message_frame = tk.Frame(password_window, bg='#2a2a2a', height=50)
+        message_frame.pack(pady=5, fill="x")
+        message_frame.pack_propagate(False)
+        
+        message_label = tk.Label(message_frame, text="",
+                                font=global_fonts['small'], bg='#2a2a2a', fg='white',
+                                wraplength=500)
+        message_label.pack(expand=True)
         
         # Функция проверки пароля
         def check_password():
@@ -1286,42 +1427,62 @@ class Game:
             user_input = password_entry.get().lower().strip()
             
             if user_input == expected:
-                messagebox.showinfo("✅ Успех!", "Пароль верный!")
-                password_window.destroy()
-                self.show_teacher_chat()
+                message_label.config(text="✅ Пароль верный! Открывается чат преподавателей...", fg='#4aff4a')
+                password_entry.config(state="disabled")
+                check_btn.config(state="disabled")
+                
+                # Открываем чат через 1.5 секунды
+                password_window.after(1500, lambda: [password_window.destroy(), self.show_teacher_chat()])
             else:
-                messagebox.showerror("❌ Ошибка", "Неверный пароль! Попробуй еще раз.")
+                message_label.config(text="❌ Неверный пароль! Попробуй еще раз.", fg='#ff6666')
+                password_entry.delete(0, tk.END)  # Очищаем поле ввода
         
         # Кнопка проверки
         check_btn = tk.Button(password_window, text="🔑 Проверить пароль", 
                             font=global_fonts['large'], bg='#4a8a4a', fg='white',
-                            command=check_password)
+                            command=check_password, width=20, height=1)
         check_btn.pack(pady=10)
         
         # Кнопка закрытия
         close_btn = tk.Button(password_window, text="✖ Закрыть", 
                             font=global_fonts['small'], bg='#8a4a4a', fg='white',
-                            command=password_window.destroy)
+                            command=password_window.destroy, width=15, height=1)
         close_btn.pack(pady=5)
 
     def show_teacher_chat(self):
         """Показывает окно с чатом преподавателей"""
         chat_window = tk.Toplevel(self.parent)
         chat_window.title("💬 Чат преподавателей")
-        chat_window.geometry("500x400")
+        chat_window.geometry("450x400+750+100")  # Фиксированный размер, справа
         chat_window.configure(bg='#2b2b2b')
         chat_window.transient(self.parent)
         chat_window.grab_set()
+        chat_window.resizable(False, False)  # Запрещаем изменение размера
         
         # Заголовок
         tk.Label(chat_window, text="💬 ЧАТ ПРЕПОДАВАТЕЛЕЙ 💬",
                 font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700').pack(pady=10)
         
-        # Фрейм для сообщений
-        messages_frame = tk.Frame(chat_window, bg='#3b3b3b', bd=2, relief="solid")
-        messages_frame.pack(pady=10, padx=20, fill="both", expand=True)
+        # Фрейм для сообщений с прокруткой
+        main_frame = tk.Frame(chat_window, bg='#2b2b2b')
+        main_frame.pack(fill="both", expand=True, padx=10, pady=5)
         
-        # Сообщения
+        # Canvas для прокрутки
+        canvas = tk.Canvas(main_frame, bg='#3b3b3b', highlightthickness=0, height=250)
+        canvas.pack(side="left", fill="both", expand=True)
+        
+        # Scrollbar
+        scrollbar = tk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Настраиваем canvas
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Фрейм для сообщений внутри canvas
+        messages_frame = tk.Frame(canvas, bg='#3b3b3b')
+        canvas.create_window((0, 0), window=messages_frame, anchor="nw", width=400)
+        
+        # Сообщения с автоматическим переносом
         messages = [
             ("Ананас:", "Куда ты положил ключ от подвала?", "#4a6a8a"),
             ("Зоркий глаз:", "В кабинете на третьем этаже, в столе.", "#6a4a8a"),
@@ -1331,22 +1492,29 @@ class Game:
         
         for i, (name, text, color) in enumerate(messages):
             msg_frame = tk.Frame(messages_frame, bg='#3b3b3b')
-            msg_frame.pack(fill="x", padx=10, pady=5)
+            msg_frame.pack(fill="x", padx=10, pady=8)
             
+            # Имя (фиксированной ширины)
             name_label = tk.Label(msg_frame, text=name, 
                                 font=global_fonts['small'], bg=color, fg='white',
-                                width=20, height=1)
+                                width=12, height=1)
             name_label.pack(side="left", padx=5)
             
+            # Текст с переносом
             text_label = tk.Label(msg_frame, text=text,
                                 font=global_fonts['small'], bg='#4b4b4b', fg='white',
-                                wraplength=300, justify="left")
+                                wraplength=250, justify="left")
             text_label.pack(side="left", padx=5, fill="x", expand=True)
+        
+        # Обновляем область прокрутки
+        messages_frame.update_idletasks()
+        canvas.configure(scrollregion=canvas.bbox("all"))
         
         # Кнопка закрытия
         close_btn = tk.Button(chat_window, text="✖ Закрыть чат", 
                             font=global_fonts['large'], bg='#8a4a4a', fg='white',
-                            command=lambda: [chat_window.destroy(), self.room_22()])
+                            command=lambda: [chat_window.destroy(), self.room_22()],
+                            width=15, height=1)
         close_btn.pack(pady=10)
 
 
