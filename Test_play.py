@@ -742,14 +742,19 @@ class Game:
         else:
             tk.Label(btn_frame, text="Другие кабинеты не видны в темноте", 
                     font=global_fonts['small'], bg='black', fg='#888888').pack(pady=5)
-# Кнопка в подвал - добавлена!
+        # Кнопка в подвал - добавлена!
         tk.Button(btn_frame, text="⬇ Спуститься в подвал", 
-                command=self.basement, **self.button_style).pack(pady=5)
+                command=self.go_to_basement, **self.button_style).pack(pady=5)
         
         # Кнопка возврата в начало коридора
         tk.Button(btn_frame, text="⬅ Вернуться в начало коридора", 
                  command=self.second_floor_1, **self.button_style).pack(pady=5)
         
+    def go_to_basement(self):
+        """Переход в подвал с сохранением текущей локации"""
+        self.previous_location = self.current_location
+        self.basement() 
+
     def room_17(self):
         self.current_location = "room_17"
         self.clear_window()
@@ -918,28 +923,28 @@ class Game:
                 "title": "Компьютер №1 - Задание по программированию",
                 "text": "В языке Python для вывода данных на экран используется функция ______",
                 "answer": "print",
-                "code_word": "PRINT",  # Кодовое слово (часть пароля)
+                "code_word": "xx",  # Кодовое слово (часть пароля)
                 "part": "part1"
             },
             2: {
                 "title": "Компьютер №2 - Задание по программированию",
-                "text": """while True:
+                "text": """                while True:
                     x = input('Введите строку: ')
                     if x == 'стоп':
                         ______
                     print(x + x)""",
                 "answer": "break",
-                "code_word": "BREAK",  # Кодовое слово (часть пароля)
+                "code_word": "XX",  # Кодовое слово (часть пароля)
                 "part": "part2"
             },
             3: {
                 "title": "Компьютер №3 - Задание по программированию",
-                "text": """for i in range(5):
+                "text": """               for i in range(5):
                     if i == 3:
                         ______
                     print(i)""",
                 "answer": "continue",
-                "code_word": "CONTINUE",  # Кодовое слово (часть пароля)
+                "code_word": "13",  # Кодовое слово (часть пароля)
                 "part": "part3"
             }
         }
@@ -1262,8 +1267,8 @@ class Game:
             # Загадки
             riddles = [
                 {
-                    "question": "Что можно увидеть с закрытыми глазами?",
-                    "answer": "сон"
+                    "question": "Знак для части кода, что видна, но программе не нужна?",
+                    "answer": "#"
                 },
                 {
                     "question": "Что становится больше, если его отдать?",
@@ -1394,7 +1399,7 @@ class Game:
         password_window.resizable(False, False)
         
         # Заголовок
-        tk.Label(password_window, text="🔑 КОМПЬЮТЕР №4 - ВВОД ПАРОЛЯ 🔑",
+        tk.Label(password_window, text="КОМПЬЮТЕР №4 - ВВОД ПАРОЛЯ",
                 font=global_fonts['large'], bg='#2a2a2a', fg='#ffd700').pack(pady=10)
         
         # Информация о частях пароля
@@ -1406,17 +1411,17 @@ class Game:
         
         parts_text = ""
         if "part1" in self.password_parts:
-            parts_text += f"✅ Компьютер 1: {self.code_words.get(1, 'PRINT')}\n"
+            parts_text += f"✅ Компьютер 1: {self.code_words.get(1, 'xx')}\n"
         else:
             parts_text += "❌ Компьютер 1: не пройден\n"
         
         if "part2" in self.password_parts:
-            parts_text += f"✅ Компьютер 2: {self.code_words.get(2, 'BREAK')}\n"
+            parts_text += f"✅ Компьютер 2: {self.code_words.get(2, 'XX')}\n"
         else:
             parts_text += "❌ Компьютер 2: не пройден\n"
         
         if "part3" in self.password_parts:
-            parts_text += f"✅ Компьютер 3: {self.code_words.get(3, 'CONTINUE')}\n"
+            parts_text += f"✅ Компьютер 3: {self.code_words.get(3, '13')}\n"
         else:
             parts_text += "❌ Компьютер 3: не пройден\n"
         
@@ -1428,7 +1433,7 @@ class Game:
         # Подсказка
         hint_frame = tk.Frame(password_window, bg='#2a2a2a')
         hint_frame.pack(pady=5)
-        tk.Label(hint_frame, text="Подсказка: введите кодовые слова через пробел в порядке компьютеров (1 2 3)",
+        tk.Label(hint_frame, text="Введите кодовые слова через пробел в порядке компьютеров (1 2 3)",
                 font=global_fonts['small'], bg='#2a2a2a', fg='#888888').pack()
         
         # Поле для ввода пароля
@@ -1462,8 +1467,8 @@ class Game:
             if 3 in self.code_words:
                 expected_words.append(self.code_words[3])
             
-            expected = " ".join(expected_words).lower()
-            user_input = password_entry.get().lower().strip()
+            expected = " ".join(expected_words)
+            user_input = password_entry.get().strip()
             
             if user_input == expected:
                 message_label.config(text="✅ Пароль верный! Открывается чат преподавателей...", fg='#4aff4a')
@@ -1745,13 +1750,22 @@ class Game:
                               text="🚫 ДВЕРЬ ЗАПЕРТА 🚫",
                               fill="red", font=global_fonts['large'])
 
-        # Кнопка возврата на второй этаж (в начало коридора)
+            # Кнопка возврата - используем предыдущую локацию
         btn_frame = tk.Frame(self.parent, bg='black', bd=3, relief="raised")
         btn_frame.place(relx=0.5, rely=0.8, anchor="center")
         
-        tk.Button(btn_frame, text="⬆ На второй этаж", font=global_fonts['small'],
-                 bg='#4a4a4a', fg='white', command=self.second_floor_1, width=17).pack(side="left", padx=0)
-    
+        tk.Button(btn_frame, text="⬆ Вернуться", font=global_fonts['small'],
+                bg='#4a4a4a', fg='white', command=self.return_from_basement, width=17).pack(side="left", padx=0)
+
+    def return_from_basement(self):
+        """Возврат из подвала в предыдущую локацию"""
+        if self.previous_location == "second_floor_2":
+            self.second_floor_2()
+        elif self.previous_location == "second_floor_1":
+            self.second_floor_1()
+        else:
+            self.second_floor_2()  # По умолчанию
+            
 
     def good_ending(self):
         self.current_location = "good_ending"
