@@ -365,6 +365,8 @@ class Game:
         self.password_parts = []
         self.code_words = {}
         self.current_location = "main_menu"
+        self.previous_location = "second_floor_2"
+
         
         # Стили кнопок
         self.button_style = {
@@ -1065,9 +1067,12 @@ class Game:
             messagebox.showinfo("🏛 Музей", "Дверь заперта. Нужен ключ.")
             return
         
+        # Сохраняем текущую локацию перед входом в музей
+        self.previous_location = self.current_location
+        
         # Показываем закрытый музей
         self.show_museum_closed()
-
+        
     def show_museum_closed(self):
         """Показывает закрытый музей (темный)"""
         self.current_location = "museum_closed"
@@ -1125,12 +1130,21 @@ class Game:
         # Показываем диалог с андроидом
         self.show_android_dialogue()
         
-        # Кнопка выхода
+        # Кнопка выхода - возвращаемся в предыдущую локацию
         exit_btn = tk.Button(self.parent, text="🚪 Выйти из музея", 
                             font=global_fonts['small'], bg='#8a4a4a', fg='white',
-                            command=self.second_floor_2, width=20, height=1)
+                            command=self.return_from_museum, width=20, height=1)
         exit_btn.place(relx=0.5, rely=0.9, anchor="center")
-            
+
+    def return_from_museum(self):
+        """Возврат в предыдущую локацию"""
+        if self.previous_location == "second_floor_2":
+            self.second_floor_2()
+        elif self.previous_location == "second_floor_1":
+            self.second_floor_1()
+        else:
+            self.second_floor_2()  # По умолчанию
+
     def show_android_dialogue(self):
         """Показывает диалоговое окно с андроидом"""
         dialogue_window = tk.Toplevel(self.parent)
@@ -1287,8 +1301,13 @@ class Game:
             # Переменная для отслеживания, был ли уже дан ответ
             answered = [False]
             
+            # Создаем кнопку ответить (сначала без команды)
+            check_btn = tk.Button(self.dialogue_text_frame, text="Ответить", 
+                                font=global_fonts['small'], bg='#4a8a4a', fg='white',
+                                width=12)
+            
             # Функция проверки ответа для конкретной загадки
-            def create_check_function(riddle, entry, error, answered_flag):
+            def create_check_function(riddle, entry, error, answered_flag, btn):
                 def check():
                     if answered_flag[0]:
                         return
@@ -1303,8 +1322,9 @@ class Game:
                                                 wraplength=240)
                         success_label.pack(pady=2)
                         
-                        # Блокируем поле ввода
+                        # Блокируем поле ввода и кнопку
                         entry.config(state="disabled")
+                        btn.config(state="disabled", bg='#6a6a6a')
                         
                         # Переходим к следующему этапу через 1 секунду
                         self.dialogue_text_frame.after(1000, self.next_dialogue_stage)
@@ -1319,13 +1339,10 @@ class Game:
                         self.show_death_from_riddle()
                 return check
             
-            # Кнопка ответить
-            check_btn = tk.Button(self.dialogue_text_frame, text="Ответить", 
-                                font=global_fonts['small'], bg='#4a8a4a', fg='white',
-                                command=create_check_function(current_riddle, answer_entry, error_label, answered),
-                                width=12)
+            # Назначаем команду для кнопки
+            check_btn.config(command=create_check_function(current_riddle, answer_entry, error_label, answered, check_btn))
             check_btn.pack(pady=5)
-        
+                
         elif self.dialogue_stage == 6:
             create_message("А ты молодец! Не ожидала, что справишься со всеми загадками!")
             self.sphinx_passed = True
@@ -1478,7 +1495,7 @@ class Game:
         """Показывает окно с чатом преподавателей"""
         chat_window = tk.Toplevel(self.parent)
         chat_window.title("💬 Чат преподавателей")
-        chat_window.geometry("450x400+750+100")  # Фиксированный размер, справа
+        chat_window.geometry("450x450+750+100")  # Фиксированный размер, справа
         chat_window.configure(bg='#2b2b2b')
         chat_window.transient(self.parent)
         chat_window.grab_set()
@@ -1499,10 +1516,10 @@ class Game:
         
         # Сообщения с автоматическим переносом
         messages = [
-            ("Ананас:", "Куда ты положил ключ от подвала?", "#4a6a8a"),
-            ("Зоркий глаз:", "В кабинете на третьем этаже, в столе.", "#6a4a8a"),
-            ("Ананас:", "Точно? А то студенты вечно теряют.", "#4a6a8a"),
-            ("Зоркий глаз:", "Да, под документами, во втором ящике.", "#6a4a8a"),
+            ("Дмитрий \nАЕгорович:", "Куда ты положил ключ от подвала?", "#4a6a8a"),
+            ("Евгения \nАлексеевна:", "В кабинете на третьем этаже, в столе.", "#6a4a8a"),
+            ("Дмитрий \nАЕгорович:", "Точно? А то студенты вечно теряют.", "#4a6a8a"),
+            ("Евгения \nААлексеевна:", "Да, под документами, во втором ящике.", "#6a4a8a"),
         ]
         
         for i, (name, text, color) in enumerate(messages):
@@ -1512,7 +1529,7 @@ class Game:
             # Имя (фиксированной ширины)
             name_label = tk.Label(msg_frame, text=name, 
                                 font=global_fonts['small'], bg=color, fg='white',
-                                width=12, height=1)
+                                width=12, height=2)
             name_label.pack(side="left", padx=5)
             
             # Текст с переносом
