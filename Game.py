@@ -416,14 +416,25 @@ class Game:
         for widget in self.parent.winfo_children():
             if widget != self.save_panel:
                 widget.destroy()
-
+        # Создаем надпись F1 в правом верхнем углу
+        self.f1_label = tk.Label(self.parent, 
+                                text="F1 - справка", 
+                                font=('Arial', 10), 
+                                bg='#2a3a4a', 
+                                fg='#aaaaaa',
+                                bd=1,
+                                relief='solid',
+                                padx=5,
+                                pady=2)
+        self.f1_label.place(relx=0.95, rely=0.02, anchor='ne')  # В правом верхнем углу
+        
     def show_main_menu(self):
         self.current_location = "main_menu"
         self.clear_window()
 
         # Фон главного меню
         try:
-            img = Image.open("start.png")
+            img = Image.open("menu.png")
             img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
             self.bg_image = ImageTk.PhotoImage(img)
             canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
@@ -435,40 +446,23 @@ class Game:
 
         # Заголовок
         canvas.create_text(WINDOW_WIDTH//2, 150, text="ВЫЖИТЬ ОБЯЗАН",
-                        fill="white", font=global_fonts['large'])
-        canvas.create_text(WINDOW_WIDTH//2, 200, text="Колледж Винкс",
-                        fill="#ff9999", font=global_fonts['small'])
+                        fill="white", font=('Arial', 24, 'bold'))
 
-        # Загружаем изображение для кнопки Play
-        try:
-            play_img = Image.open("play_1.png")
-            # Изменяем размер кнопки (можно настроить под свой дизайн)
-            play_img = play_img.resize((200, 60), Image.Resampling.LANCZOS)
-            self.play_button_img = ImageTk.PhotoImage(play_img)
-            
-            # Создаем кнопку с изображением
-            play_button = tk.Button(canvas, image=self.play_button_img, 
-                                borderwidth=0, highlightthickness=0,
-                                command=self.start_new_game)
-            # Размещаем кнопку в нужном месте
-            canvas.create_window(WINDOW_WIDTH//2, 300, window=play_button)
-        except Exception as e:
-            print(f"Ошибка загрузки play.png: {e}")
-            # Если изображение не загрузилось, используем обычную кнопку
-            play_button = tk.Button(canvas, text="🌟 Начать новую игру", 
-                                font=global_fonts['large'], bg='#4a4a4a', 
-                                fg='white', command=self.start_new_game)
-            canvas.create_window(WINDOW_WIDTH//2, 300, window=play_button)
+        # Кнопка "Начать новую игру" (обычная кнопка, как остальные)
+        play_btn = tk.Button(canvas, text="Начать новую игру", 
+                            font=global_fonts['large'], bg="#1f3a92", 
+                            fg='white', command=self.start_new_game)
+        canvas.create_window(WINDOW_WIDTH//2, 300, window=play_btn)
 
-        # Кнопка "Продолжить игру" (обычная, пока без изображения)
+        # Кнопка "Продолжить игру"
         continue_btn = tk.Button(canvas, text="Продолжить игру", 
-                            font=global_fonts['large'], bg='#4a4a4a', 
-                            fg='white', command=self.load_game)
+                                font=global_fonts['large'], bg='#1f3a92', 
+                                fg='white', command=self.load_game)
         canvas.create_window(WINDOW_WIDTH//2, 380, window=continue_btn)
 
         # Кнопка "Выйти"
         exit_btn = tk.Button(canvas, text="Выйти", 
-                            font=global_fonts['large'], bg='#4a4a4a', 
+                            font=global_fonts['large'], bg='#1f3a92', 
                             fg='white', command=self.parent.quit)
         canvas.create_window(WINDOW_WIDTH//2, 460, window=exit_btn)
         
@@ -487,44 +481,169 @@ class Game:
         self.show_prologue()
 
     def show_prologue(self):
+        """Показывает анимацию начала игры"""
         self.current_location = "prologue"
         self.clear_window()
-
-        # Фон пролога
+        
+        # Создаем холст для анимации
+        canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black')
+        canvas.pack()
+        
+        # Загружаем GIF анимацию
         try:
-            img = Image.open("prologue_bg.png")
-            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
-            self.bg_image = ImageTk.PhotoImage(img)
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
-            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
-            canvas.pack()
-        except:
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#1a2a3a")
-            canvas.pack()
+            # Открываем GIF
+            self.gif = Image.open("nachalo.gif")
+            
+            # Получаем количество кадров
+            self.gif_frames = []
+            try:
+                while True:
+                    # Копируем текущий кадр
+                    frame = self.gif.copy()
+                    # Уменьшаем на 20% (можно подобрать нужный процент)
+                    new_width = int(WINDOW_WIDTH * 0.5)
+                    new_height = int(WINDOW_HEIGHT * 0.5)
+                    frame = frame.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                    self.gif_frames.append(ImageTk.PhotoImage(frame))
+                    self.gif.seek(self.gif.tell() + 1)  # Переходим к следующему кадру
+            except EOFError:
+                pass  # Достигнут конец GIF
+            
+            print(f"Загружено {len(self.gif_frames)} кадров анимации начала")
+            
+            if self.gif_frames:
+                # Создаем метку для отображения анимации
+                self.gif_label = tk.Label(canvas, bg='black')
+                self.gif_label.pack(expand=True, fill='both')
+                
+                # Запускаем анимацию (проигрывается один раз)
+                self.gif_frame_index = 0
+                self.animate_prologue_gif()
+            else:
+                # Если не удалось загрузить кадры, показываем черный экран с кнопкой
+                self.show_prologue_continue_screen()
+                
+        except Exception as e:
+            print(f"Ошибка загрузки nachalo.gif: {e}")
+            # Если GIF не загрузился, показываем черный экран с кнопкой
+            self.show_prologue_continue_screen()
 
-        # Текст пролога с оформлением
-        prologue_text = """ТУТ БУДЕТ ГИФКАААА
+    def animate_prologue_gif(self):
+        """Анимирует GIF начала игры один раз"""
+        if hasattr(self, 'gif_label') and self.gif_label.winfo_exists():
+            # Показываем текущий кадр
+            self.gif_label.config(image=self.gif_frames[self.gif_frame_index])
+            self.gif_label.update()  # Принудительно обновляем
+            
+            # Переходим к следующему кадру
+            self.gif_frame_index += 1
+            
+            # Если есть еще кадры, запускаем следующий с минимальной задержкой
+            if self.gif_frame_index < len(self.gif_frames):
+                # 50 мс для плавности (можно настроить)
+                self.parent.after(120, self.animate_prologue_gif)
+            else:
+                # Анимация закончилась - показываем черный экран с кнопкой
+                self.show_prologue_continue_screen()
+
+    def show_prologue(self):
+        """Показывает анимацию начала игры"""
+        self.current_location = "prologue"
+        self.clear_window()
         
-        Ходит легенда, что в колледже \"Винкс\" обитает странная сущность...
+        # Сразу показываем черный экран с надписью "Загрузка..."
+        canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black')
+        canvas.pack()
         
-Она проявляется только после 19:00. Студентам даётся всего лишь 10 минут,
-чтобы успеть выйти из здания.
+        loading_label = tk.Label(canvas, text="Несём проектор, подождите немного....", 
+                                font=global_fonts['large'], 
+                                bg='black', fg='white')
+        loading_label.place(relx=0.5, rely=0.5, anchor='center')
+        
+        # Обновляем экран, чтобы показать надпись
+        self.parent.update()
+        
+        # Загружаем GIF анимацию в фоне
+        self.parent.after(100, lambda: self.load_and_play_prologue_gif(canvas, loading_label))
 
-Сегодня студентка Оксана задержалась, пытаясь найти пропавший пропуск в своей сумке.
-Сейчас 19:00... Дверь захлопнулась. Ей предстоит выжить и найти путь наружу..."""
+    def load_and_play_prologue_gif(self, canvas, loading_label):
+        """Загружает и проигрывает GIF (вызывается после короткой задержки)"""
+        try:
+            # Удаляем надпись загрузки
+            loading_label.destroy()
+            
+            # Открываем GIF
+            self.gif = Image.open("nachalo.gif")
+            
+            # Оптимизация: уменьшаем количество кадров для ускорения загрузки
+            self.gif_frames = []
+            frame_count = 0
+            try:
+                while True:
+                    if frame_count % 2 == 0:  # Берем каждый второй кадр
+                        frame = self.gif.copy()
+                        # Уменьшаем размер (60% от окна - подберите нужный процент)
+                        new_width = int(WINDOW_WIDTH * 0.9)
+                        new_height = int(WINDOW_HEIGHT * 0.9)
+                        frame = frame.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                        self.gif_frames.append(ImageTk.PhotoImage(frame))
+                    self.gif.seek(self.gif.tell() + 1)
+                    frame_count += 1
+            except EOFError:
+                pass
+            
+            print(f"Загружено {len(self.gif_frames)} кадров анимации начала")
+            
+            if self.gif_frames:
+                # Создаем метку для отображения анимации
+                self.gif_label = tk.Label(canvas, bg='black')
+                # Размещаем по центру без растягивания
+                self.gif_label.place(relx=0.5, rely=0.5, anchor='center')
+                
+                # Запускаем анимацию сразу
+                self.gif_frame_index = 0
+                self.animate_prologue_gif()
+            else:
+                self.show_prologue_continue_screen()
+                
+        except Exception as e:
+            print(f"Ошибка загрузки nachalo.gif: {e}")
+            loading_label.destroy()
+            self.show_prologue_continue_screen()
+            
 
-        # Полупрозрачный фон для текста
-        text_bg = tk.Frame(canvas, bg='black')
-        text_bg.place(relx=0.5, rely=0.4, anchor="center", width=600, height=250)
+    def animate_prologue_gif(self):
+        """Анимирует GIF начала игры один раз"""
+        if hasattr(self, 'gif_label') and self.gif_label.winfo_exists():
+            # Показываем текущий кадр
+            self.gif_label.config(image=self.gif_frames[self.gif_frame_index])
+            
+            # Переходим к следующему кадру
+            self.gif_frame_index += 1
+            
+            # Если есть еще кадры, запускаем следующий
+            if self.gif_frame_index < len(self.gif_frames):
+                self.parent.after(50, self.animate_prologue_gif)
+            else:
+                # Анимация закончилась - показываем черный экран с кнопкой
+                self.show_prologue_continue_screen()
 
-        text_widget = tk.Text(text_bg, wrap="word", font=global_fonts['small'],
-                             bg="#000000", fg="#ffffff", width=60, height=10, bd=0)
-        text_widget.insert("1.0", prologue_text)
-        text_widget.pack(padx=10, pady=10)
-
-        tk.Button(canvas, text="▶ Продолжить", font=global_fonts['large'],
-                 bg="#4a6a8a", fg="white", activebackground="#5a7a9a", command=self.first_floor).place(relx=0.5, rely=0.7, anchor="center")
-
+    def show_prologue_continue_screen(self):
+        """Показывает черный экран с кнопкой продолжения"""
+        self.clear_window()
+        
+        # Черный фон
+        canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black')
+        canvas.pack()
+        
+        # Кнопка продолжения
+        tk.Button(self.parent,
+                text="Продолжить",
+                font=global_fonts['large'],
+                bg='#1f3a92', fg='white',
+                command=self.first_floor,
+                width=20, height=2).place(relx=0.5, rely=0.5, anchor="center")
+        
     def first_floor(self):
         self.current_location = "first_floor"
         self.clear_window()
@@ -595,28 +714,84 @@ class Game:
         messagebox.showinfo("Столовая", "В столовой темно и пусто. Здесь недавно были студенты.")
 
     def death_ending(self):
+        """Показывает анимацию нападения при повороте направо"""
         self.current_location = "death"
         self.clear_window()
+        
+        # Создаем холст для анимации
+        canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black')
+        canvas.pack()
+        
+        # Загружаем GIF анимацию
         try:
-            img = Image.open("wolf.png")
-            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
-            self.bg_image = ImageTk.PhotoImage(img)
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
-            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
-            canvas.pack()
-        except:
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#330000")
-            canvas.pack()
+            # Открываем GIF
+            self.gif = Image.open("napadenie.gif")
+            
+            # Получаем количество кадров
+            self.gif_frames = []
+            try:
+                while True:
+                    # Копируем текущий кадр
+                    frame = self.gif.copy()
+                    frame = frame.resize((WINDOW_WIDTH, WINDOW_HEIGHT), Image.Resampling.LANCZOS)
+                    self.gif_frames.append(ImageTk.PhotoImage(frame))
+                    self.gif.seek(self.gif.tell() + 1)  # Переходим к следующему кадру
+            except EOFError:
+                pass  # Достигнут конец GIF
+            
+            print(f"Загружено {len(self.gif_frames)} кадров анимации")
+            
+            if self.gif_frames:
+                # Создаем метку для отображения анимации
+                self.gif_label = tk.Label(canvas, bg='black')
+                self.gif_label.pack(expand=True, fill='both')
+                
+                # Запускаем анимацию (проигрывается один раз)
+                self.gif_frame_index = 0
+                self.animate_gif_once()
+            else:
+                # Если не удалось загрузить кадры, показываем черный экран с кнопкой
+                self.show_death_screen()
+                
+        except Exception as e:
+            print(f"Ошибка загрузки napadenie.gif: {e}")
+            # Если GIF не загрузился, показываем черный экран с кнопкой
+            self.show_death_screen()
 
-            # Символический рисунок волка
-            canvas.create_text(400, 300, text="🐺", font=global_fonts['large'], fill="red")
-
-        canvas.create_text(WINDOW_WIDTH//2, WINDOW_HEIGHT//2,
-                          text="ТЫ ВСТРЕТИЛ СУЩНОСТЬ... \n\nКрасный волк поражает тебя мощным зарядом энергии.\n\nКОНЕЦ ИГРЫ",
-                          fill="white", font=global_fonts['large'], justify="center")
-
-        tk.Button(self.parent, text="В главное меню", font=global_fonts['large'],
-                 bg="#4a4a4a", fg="white", command=self.show_main_menu).place(relx=0.5, rely=0.8, anchor="center")
+    def animate_gif_once(self):
+        """Анимирует GIF один раз"""
+        if hasattr(self, 'gif_label') and self.gif_label.winfo_exists():
+            # Показываем текущий кадр
+            self.gif_label.config(image=self.gif_frames[self.gif_frame_index])
+            self.gif_label.update()  # Принудительно обновляем
+            
+            # Переходим к следующему кадру
+            self.gif_frame_index += 1
+            
+            # Если есть еще кадры, запускаем следующий с минимальной задержкой
+            if self.gif_frame_index < len(self.gif_frames):
+                # 10 мс - очень быстро, почти мгновенно
+                self.parent.after(2, self.animate_gif_once)
+            else:
+                # Анимация закончилась - сразу показываем черный экран с кнопкой
+                self.show_death_screen()
+                
+    def show_death_screen(self):
+        """Показывает черный экран с кнопкой возврата в меню"""
+        self.clear_window()
+        
+        # Черный фон
+        canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black')
+        canvas.pack()
+        
+        # Кнопка возврата в главное меню
+        tk.Button(self.parent,
+                text="В главное меню",
+                font=global_fonts['large'],
+                bg='#1f3a92', fg='white',
+                command=self.show_main_menu,
+                width=20, height=2).place(relx=0.5, rely=0.5, anchor="center")
+        
 
     # ПЕРВЫЙ КОРИДОР ВТОРОГО ЭТАЖА (с лестницами)
     def second_floor_1(self):
@@ -1271,12 +1446,12 @@ class Game:
                     "answer": "#"
                 },
                 {
-                    "question": "Что становится больше, если его отдать?",
-                    "answer": "долг"
+                    "question": "Английское словечко, мал да удал, кто цикл в программе запускал?",
+                    "answer": "for"
                 },
                 {
-                    "question": "Что принадлежит вам, но другие пользуются этим чаще?",
-                    "answer": "имя"
+                    "question": "Чтоб функию закончить и ответ отдать, какую команду нужно написать?",
+                    "answer": "return"
                 }
             ]
             
@@ -1497,58 +1672,43 @@ class Game:
         close_btn.pack(pady=5)
         
     def show_teacher_chat(self):
-        """Показывает окно с чатом преподавателей"""
-        chat_window = tk.Toplevel(self.parent)
-        chat_window.title("💬 Чат преподавателей")
-        chat_window.geometry("450x450+750+100")  # Фиксированный размер, справа
-        chat_window.configure(bg='#2b2b2b')
-        chat_window.transient(self.parent)
-        chat_window.grab_set()
-        chat_window.resizable(False, False)  # Запрещаем изменение размера
+        """Показывает окно с изображением диалога"""
+        dialog_window = tk.Toplevel(self.parent)
+        dialog_window.title("💬 Чат преподавателей")
+        dialog_window.geometry("600x450+750+100")  # Размер под ваше изображение
+        dialog_window.configure(bg='#2b2b2b')
+        dialog_window.transient(self.parent)
+        dialog_window.grab_set()
+        dialog_window.resizable(False, False)  # Запрещаем изменение размера
         
-        # Заголовок
-        tk.Label(chat_window, text="ЧАТ ПРЕПОДАВАТЕЛЕЙ",
-                font=global_fonts['large'], bg='#2b2b2b', fg='#ffd700').pack(pady=10)
-        
-        # Фрейм для сообщений с прокруткой
-        main_frame = tk.Frame(chat_window, bg='#2b2b2b')
-        main_frame.pack(fill="both", expand=True, padx=10, pady=5)
-    
-        
-       # Фрейм для сообщений (без прокрутки)
-        messages_frame = tk.Frame(chat_window, bg='#3b3b3b')
-        messages_frame.pack(fill="both", expand=True, padx=10, pady=5)
-        
-        # Сообщения с автоматическим переносом
-        messages = [
-            ("Дмитрий \nАЕгорович:", "Куда ты положил ключ от подвала?", "#4a6a8a"),
-            ("Евгения \nАлексеевна:", "В кабинете на третьем этаже, в столе.", "#6a4a8a"),
-            ("Дмитрий \nАЕгорович:", "Точно? А то студенты вечно теряют.", "#4a6a8a"),
-            ("Евгения \nААлексеевна:", "Да, под документами, во втором ящике.", "#6a4a8a"),
-        ]
-        
-        for i, (name, text, color) in enumerate(messages):
-            msg_frame = tk.Frame(messages_frame, bg='#3b3b3b')
-            msg_frame.pack(fill="x", padx=10, pady=8)
+        # Загружаем изображение диалога
+        try:
+            img = Image.open("dialog.png")
+            # Изменяем размер под окно (можно подстроить)
+            img = img.resize((580, 380), Image.Resampling.LANCZOS)
+            self.dialog_img = ImageTk.PhotoImage(img)
             
-            # Имя (фиксированной ширины)
-            name_label = tk.Label(msg_frame, text=name, 
-                                font=global_fonts['small'], bg=color, fg='white',
-                                width=12, height=2)
-            name_label.pack(side="left", padx=5)
+            # Создаем метку с изображением
+            img_label = tk.Label(dialog_window, image=self.dialog_img, bg='#2b2b2b')
+            img_label.pack(pady=10, padx=10)
             
-            # Текст с переносом
-            text_label = tk.Label(msg_frame, text=text,
-                                font=global_fonts['small'], bg='#4b4b4b', fg='white',
-                                wraplength=250, justify="left")
-            text_label.pack(side="left", padx=5, fill="x", expand=True)
+        except Exception as e:
+            print(f"Ошибка загрузки dialog.png: {e}")
+            # Если изображение не загрузилось, показываем заглушку
+            error_label = tk.Label(dialog_window, 
+                                text="Изображение диалога не найдено",
+                                font=global_fonts['large'], 
+                                bg='#2b2b2b', fg='red')
+            error_label.pack(pady=50)
         
         # Кнопка закрытия
-        close_btn = tk.Button(chat_window, text="✖ Закрыть чат", 
-                            font=global_fonts['large'], bg='#8a4a4a', fg='white',
-                            command=lambda: [chat_window.destroy(), self.room_22()],
+        close_btn = tk.Button(dialog_window, text="✖ Закрыть", 
+                            font=global_fonts['large'], 
+                            bg='#8a4a4a', fg='white',
+                            command=dialog_window.destroy,
                             width=15, height=1)
         close_btn.pack(pady=10)
+        
 
 
     def third_floor(self):
@@ -1635,7 +1795,69 @@ class Game:
                             font=global_fonts['large'], bg='#8a4a4a', fg='white',
                             command=self.third_floor, width=20, height=2, bd=3, relief="raised")
         exit_btn.place(relx=0.5, rely=0.75, anchor="center")  # Внизу
+    
+    def show_death_from_document(self):
+        """Показывает анимацию скрепки при неверном выборе документа"""
+        self.current_location = "death"
+        self.clear_window()
         
+        # Создаем холст для анимации
+        canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black')
+        canvas.pack()
+        
+        # Загружаем GIF анимацию
+        try:
+            # Открываем GIF
+            self.gif = Image.open("screpka.gif")
+            
+            # Получаем количество кадров
+            self.gif_frames = []
+            try:
+                while True:
+                    # Копируем текущий кадр
+                    frame = self.gif.copy()
+                    frame = frame.resize((WINDOW_WIDTH, WINDOW_HEIGHT), Image.Resampling.LANCZOS)
+                    self.gif_frames.append(ImageTk.PhotoImage(frame))
+                    self.gif.seek(self.gif.tell() + 1)  # Переходим к следующему кадру
+            except EOFError:
+                pass  # Достигнут конец GIF
+            
+            print(f"Загружено {len(self.gif_frames)} кадров анимации скрепки")
+            
+            if self.gif_frames:
+                # Создаем метку для отображения анимации
+                self.gif_label = tk.Label(canvas, bg='black')
+                self.gif_label.pack(expand=True, fill='both')
+                
+                # Запускаем анимацию (проигрывается один раз)
+                self.gif_frame_index = 0
+                self.animate_screpka_gif_once()
+            else:
+                # Если не удалось загрузить кадры, показываем черный экран с кнопкой
+                self.show_death_screen()
+                
+        except Exception as e:
+            print(f"Ошибка загрузки screpka.gif: {e}")
+            # Если GIF не загрузился, показываем черный экран с кнопкой
+            self.show_death_screen()
+
+    def animate_screpka_gif_once(self):
+        """Анимирует GIF скрепки один раз (с такой же скоростью как у андроида)"""
+        if hasattr(self, 'gif_label') and self.gif_label.winfo_exists():
+            # Показываем текущий кадр
+            self.gif_label.config(image=self.gif_frames[self.gif_frame_index])
+            self.gif_label.update()  # Принудительно обновляем
+            
+            # Переходим к следующему кадру
+            self.gif_frame_index += 1
+            
+            # Если есть еще кадры, запускаем следующий с задержкой
+            if self.gif_frame_index < len(self.gif_frames):
+                self.parent.after(20, self.animate_screpka_gif_once)  # Та же скорость, что у андроида
+            else:
+                # Анимация закончилась - показываем черный экран с кнопкой
+                self.show_death_screen()
+
     def check_key(self, num):
         """Проверка выбранного документа"""
         if num == 2:  # Правильный документ
@@ -1643,7 +1865,8 @@ class Game:
             # Показываем сообщение об успехе прямо в кабинете
             self.show_key_success()
         else:
-            self.death_ending()
+            # Неправильный документ - показываем анимацию скрепки
+            self.show_death_from_document()
     def show_key_success(self):
         """Показывает сообщение об успехе в кабинете"""
         self.clear_window()
@@ -1676,33 +1899,67 @@ class Game:
                 command=self.third_floor, width=20, height=2).place(relx=0.5, rely=0.7, anchor="center")
         
     def show_death_from_riddle(self):
-        """Показывает смерть от сущности при неверном ответе на загадку"""
+        """Показывает анимацию андроида при неверном ответе на загадку"""
         self.current_location = "death"
         self.clear_window()
         
-        try:
-            img = Image.open("wolf.png")
-            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
-            self.bg_image = ImageTk.PhotoImage(img)
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
-            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
-            canvas.pack()
-        except:
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#330000")
-            canvas.pack()
-
-            # Символический рисунок волка
-            canvas.create_text(400, 300, text="🐺", font=('Arial', 100), fill="red")
-            canvas.create_text(400, 400, text="СУЩНОСТЬ НАШЛА ТЕБЯ", 
-                            font=global_fonts['large'], fill="white")
-
-        canvas.create_text(WINDOW_WIDTH//2, WINDOW_HEIGHT//2,
-                        text="ТЫ НЕ СПРАВИЛСЯ С ЗАГАДКОЙ...\n\nКрасный волк поражает тебя мощным зарядом энергии.\n\nКОНЕЦ ИГРЫ",
-                        fill="white", font=global_fonts['large'], justify="center")
-
-        tk.Button(self.parent, text="В главное меню", font=global_fonts['large'],
-                bg="#4a4a4a", fg="white", command=self.show_main_menu).place(relx=0.5, rely=0.8, anchor="center")
+        # Создаем холст для анимации
+        canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black')
+        canvas.pack()
         
+        # Загружаем GIF анимацию
+        try:
+            # Открываем GIF
+            self.gif = Image.open("android.gif")
+            
+            # Получаем количество кадров
+            self.gif_frames = []
+            try:
+                while True:
+                    # Копируем текущий кадр
+                    frame = self.gif.copy()
+                    frame = frame.resize((WINDOW_WIDTH, WINDOW_HEIGHT), Image.Resampling.LANCZOS)
+                    self.gif_frames.append(ImageTk.PhotoImage(frame))
+                    self.gif.seek(self.gif.tell() + 1)  # Переходим к следующему кадру
+            except EOFError:
+                pass  # Достигнут конец GIF
+            
+            print(f"Загружено {len(self.gif_frames)} кадров анимации андроида")
+            
+            if self.gif_frames:
+                # Создаем метку для отображения анимации
+                self.gif_label = tk.Label(canvas, bg='black')
+                self.gif_label.pack(expand=True, fill='both')
+                
+                # Запускаем анимацию (проигрывается один раз)
+                self.gif_frame_index = 0
+                self.animate_android_gif_once()
+            else:
+                # Если не удалось загрузить кадры, показываем черный экран с кнопкой
+                self.show_death_screen()
+                
+        except Exception as e:
+            print(f"Ошибка загрузки android.gif: {e}")
+            # Если GIF не загрузился, показываем черный экран с кнопкой
+            self.show_death_screen()
+
+    def animate_android_gif_once(self):
+        """Анимирует GIF андроида один раз"""
+        if hasattr(self, 'gif_label') and self.gif_label.winfo_exists():
+            # Показываем текущий кадр
+            self.gif_label.config(image=self.gif_frames[self.gif_frame_index])
+            self.gif_label.update()  # Принудительно обновляем
+            
+            # Переходим к следующему кадру
+            self.gif_frame_index += 1
+            
+            # Если есть еще кадры, запускаем следующий с задержкой
+            if self.gif_frame_index < len(self.gif_frames):
+                self.parent.after(20, self.animate_android_gif_once)  # Можно настроить скорость
+            else:
+                # Анимация закончилась - показываем черный экран с кнопкой
+                self.show_death_screen()
+                
             
     def basement(self):
         self.current_location = "basement"
@@ -1800,9 +2057,9 @@ class Game:
 
         # Кнопка в главное меню (чуть ниже)
         tk.Button(self.parent,
-                text="🏠 В главное меню",
+                text="В главное меню",
                 font=global_fonts['large'],
-                bg='#4a4a4a', fg='white', activebackground='#6a6a6a',
+                bg='#1f3a92', fg='white', activebackground='#6a6a6a',
                 command=self.show_main_menu, width=20, height=2).place(relx=0.5, rely=0.7, anchor="center")
         
 
@@ -1903,7 +2160,7 @@ class Game:
 
 Управление:
 - Используйте кнопки для выбора действий
-- Кнопка 💾 СОХРАНИТЬ ИГРУ всегда внизу экрана
+- Кнопка СОХРАНИТЬ ИГРУ всегда внизу экрана
 - Вводите правильные ответы на загадки
 - Получайте важные предметы и ключи
 
