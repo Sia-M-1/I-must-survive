@@ -17,9 +17,11 @@ import sys
 with patch('tkinter.Tk'), patch('tkinter.Toplevel'), patch('tkinter.Frame'), \
      patch('tkinter.Button'), patch('tkinter.Label'), patch('tkinter.Canvas'), \
      patch('tkinter.Text'), patch('tkinter.Scrollbar'), patch('tkinter.font.Font'), \
-     patch('PIL.ImageTk.PhotoImage'), patch('PIL.Image.open'):
+     patch('PIL.ImageTk.PhotoImage'), patch('PIL.Image.open'), \
+     patch('tkinter.messagebox.showinfo'), patch('tkinter.messagebox.showerror'), \
+     patch('tkinter.messagebox.askyesno'):
     
-    # Импортируем классы из основного файла - ИСПРАВЛЕНО на ugraaa
+    # Импортируем классы из основного файла
     from ugraaa import Game, WirePuzzle, DocumentViewer, split_long_text, global_fonts
 
 # Фикстуры
@@ -130,7 +132,7 @@ class TestHelperFunctions:
 
 # ============= ТЕСТЫ ДЛЯ ИГРЫ В ПЯТНАШКИ =============
 class TestWirePuzzle:
-    """Тесты для игры в пятнашки - с моками"""
+    """Тесты для игры в пятнашки - проверка реальной логики"""
     
     @patch('ugraaa.os.path.exists')
     @patch('ugraaa.Image.open')
@@ -155,11 +157,12 @@ class TestWirePuzzle:
             assert puzzle is not None
             assert hasattr(puzzle, 'board')
             assert len(puzzle.board) == 9
-            assert puzzle.board[0] == 0
-            assert None in puzzle.board
+            assert puzzle.board[0] == 0  # Первая плитка закреплена
+            assert None in puzzle.board  # Есть пустая клетка
+            assert puzzle.empty_idx == puzzle.board.index(None)
     
-    def test_move_valid_adjacent(self, root):
-        """Позитивный тест: перемещение соседней плитки"""
+    def test_move_valid_adjacent_horizontal(self, root):
+        """Позитивный тест: перемещение соседней плитки по горизонтали"""
         on_complete = Mock()
         
         with patch('ugraaa.tk.Toplevel'), \
@@ -167,11 +170,12 @@ class TestWirePuzzle:
              patch('ugraaa.tk.Button'), \
              patch('ugraaa.tk.Label'), \
              patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'):
+             patch('ugraaa.ImageTk.PhotoImage'), \
+             patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
             
-            # Устанавливаем предсказуемую доску для теста
+            # Устанавливаем предсказуемую доску: пустая на позиции 7
             puzzle.board = [0, 1, 2, 3, 4, 5, 6, None, 7]
             puzzle.empty_idx = 7
             puzzle.empty_image = MagicMock()
@@ -181,15 +185,16 @@ class TestWirePuzzle:
             mock_button = MagicMock()
             puzzle.buttons = [mock_button for _ in range(9)]
             
-            initial_board = puzzle.board.copy()
+            # Выполняем ход с соседней плиткой (индекс 6)
+            puzzle.move(6)
             
-            with patch('tkinter.messagebox.showinfo'):
-                # Перемещаем соседнюю плитку (индекс 6)
-                puzzle.move(6)
-                assert puzzle.board != initial_board
+            # Проверяем, что плитки поменялись местами
+            assert puzzle.board[6] is None
+            assert puzzle.board[7] == 6
+            assert puzzle.empty_idx == 6
     
-    def test_move_invalid_not_adjacent(self, root):
-        """Негативный тест: перемещение несоседней плитки"""
+    def test_move_valid_adjacent_vertical(self, root):
+        """Позитивный тест: перемещение соседней плитки по вертикали"""
         on_complete = Mock()
         
         with patch('ugraaa.tk.Toplevel'), \
@@ -197,11 +202,43 @@ class TestWirePuzzle:
              patch('ugraaa.tk.Button'), \
              patch('ugraaa.tk.Label'), \
              patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'):
+             patch('ugraaa.ImageTk.PhotoImage'), \
+             patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
             
-            # Устанавливаем предсказуемую доску
+            # Устанавливаем доску: пустая на позиции 6
+            puzzle.board = [0, 1, 2, 3, 4, 5, None, 7, 8]
+            puzzle.empty_idx = 6
+            puzzle.empty_image = MagicMock()
+            puzzle.images = [MagicMock() for _ in range(8)]
+            
+            mock_button = MagicMock()
+            puzzle.buttons = [mock_button for _ in range(9)]
+            
+            # Перемещаем плитку сверху (индекс 3)
+            puzzle.move(3)
+            
+            # Проверяем, что плитки поменялись местами
+            assert puzzle.board[3] is None
+            assert puzzle.board[6] == 3
+            assert puzzle.empty_idx == 3
+    
+    def test_move_invalid_not_adjacent(self, root):
+        """Негативный тест: попытка переместить несоседнюю плитку"""
+        on_complete = Mock()
+        
+        with patch('ugraaa.tk.Toplevel'), \
+             patch('ugraaa.tk.Frame'), \
+             patch('ugraaa.tk.Button'), \
+             patch('ugraaa.tk.Label'), \
+             patch('ugraaa.Image.open'), \
+             patch('ugraaa.ImageTk.PhotoImage'), \
+             patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
+            
+            puzzle = WirePuzzle(root, on_complete)
+            
+            # Устанавливаем доску: пустая на позиции 7
             puzzle.board = [0, 1, 2, 3, 4, 5, 6, None, 7]
             puzzle.empty_idx = 7
             puzzle.empty_image = MagicMock()
@@ -212,12 +249,15 @@ class TestWirePuzzle:
             
             initial_board = puzzle.board.copy()
             
-            # Пытаемся переместить первую плитку (она закреплена)
-            puzzle.move(0)
+            # Пытаемся переместить плитку с индекса 5 (не соседняя)
+            puzzle.move(5)
+            
+            # Проверяем, что доска не изменилась
             assert puzzle.board == initial_board
+            assert puzzle.empty_idx == 7
     
     def test_move_first_tile(self, root):
-        """Негативный тест: попытка переместить первую плитку"""
+        """Негативный тест: попытка переместить первую (закрепленную) плитку"""
         on_complete = Mock()
         
         with patch('ugraaa.tk.Toplevel'), \
@@ -225,7 +265,8 @@ class TestWirePuzzle:
              patch('ugraaa.tk.Button'), \
              patch('ugraaa.tk.Label'), \
              patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'):
+             patch('ugraaa.ImageTk.PhotoImage'), \
+             patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
             
@@ -236,11 +277,14 @@ class TestWirePuzzle:
             mock_button = MagicMock()
             puzzle.buttons = [mock_button for _ in range(9)]
             
+            # Пытаемся переместить первую плитку
             puzzle.move(0)
+            
+            # Проверяем, что доска не изменилась
             assert puzzle.board == initial_board
     
     def test_move_when_empty_at_edge(self, root):
-        """Граничный тест: пустая клетка на границе"""
+        """Граничный тест: пустая клетка на границе (в углу)"""
         on_complete = Mock()
         
         with patch('ugraaa.tk.Toplevel'), \
@@ -248,11 +292,12 @@ class TestWirePuzzle:
              patch('ugraaa.tk.Button'), \
              patch('ugraaa.tk.Label'), \
              patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'):
+             patch('ugraaa.ImageTk.PhotoImage'), \
+             patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
             
-            # Устанавливаем пустую клетку на границе (угол)
+            # Пустая клетка в правом нижнем углу (индекс 8)
             puzzle.board = [0, 1, 2, 3, 4, 5, 6, 7, None]
             puzzle.empty_idx = 8
             puzzle.empty_image = MagicMock()
@@ -261,14 +306,16 @@ class TestWirePuzzle:
             mock_button = MagicMock()
             puzzle.buttons = [mock_button for _ in range(9)]
             
-            with patch('tkinter.messagebox.showinfo'):
-                puzzle.move(7)
-                assert puzzle.empty_idx == 7
-                assert puzzle.board[7] is None
-                assert puzzle.board[8] == 7
+            # Перемещаем плитку 7 (соседняя слева)
+            puzzle.move(7)
+            
+            # Проверяем результат
+            assert puzzle.board[7] is None
+            assert puzzle.board[8] == 7
+            assert puzzle.empty_idx == 7
     
-    def test_multiple_moves(self, root):
-        """Интеграционный тест: несколько перемещений подряд"""
+    def test_multiple_moves_sequence(self, root):
+        """Интеграционный тест: последовательность нескольких ходов"""
         on_complete = Mock()
         
         with patch('ugraaa.tk.Toplevel'), \
@@ -276,10 +323,12 @@ class TestWirePuzzle:
              patch('ugraaa.tk.Button'), \
              patch('ugraaa.tk.Label'), \
              patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'):
+             patch('ugraaa.ImageTk.PhotoImage'), \
+             patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
             
+            # Начальная доска: пустая в правом нижнем углу
             puzzle.board = [0, 1, 2, 3, 4, 5, 6, 7, None]
             puzzle.empty_idx = 8
             puzzle.empty_image = MagicMock()
@@ -288,16 +337,26 @@ class TestWirePuzzle:
             mock_button = MagicMock()
             puzzle.buttons = [mock_button for _ in range(9)]
             
-            moves_made = 0
-            with patch('tkinter.messagebox.showinfo'):
-                if abs(7 - puzzle.empty_idx) in [1, 3]:
-                    puzzle.move(7)
-                    moves_made += 1
+            # Ход 1: перемещаем 7 на место пустой (8)
+            puzzle.move(7)
+            assert puzzle.board[7] is None
+            assert puzzle.board[8] == 7
+            assert puzzle.empty_idx == 7
             
-            assert moves_made > 0
+            # Ход 2: перемещаем 6 на место пустой (7)
+            puzzle.move(6)
+            assert puzzle.board[6] is None
+            assert puzzle.board[7] == 6
+            assert puzzle.empty_idx == 6
+            
+            # Ход 3: перемещаем 3 на место пустой (6)
+            puzzle.move(3)
+            assert puzzle.board[3] is None
+            assert puzzle.board[6] == 3
+            assert puzzle.empty_idx == 3
     
     def test_get_image_with_value(self, root):
-        """Позитивный тест: получение изображения с числом"""
+        """Позитивный тест: получение изображения для плитки с числом"""
         on_complete = Mock()
         
         with patch('ugraaa.tk.Toplevel'), \
@@ -309,14 +368,17 @@ class TestWirePuzzle:
             
             puzzle = WirePuzzle(root, on_complete)
             
-            puzzle.images = [MagicMock() for _ in range(8)]
+            # Создаем мок для images
+            mock_image = MagicMock()
+            puzzle.images = [mock_image for _ in range(8)]
             puzzle.empty_image = MagicMock()
             
+            # Получаем изображение для плитки с числом
             img = puzzle.get_image(1)
-            assert img is not None
+            assert img == puzzle.images[puzzle.board[1]]
     
     def test_get_image_with_none(self, root):
-        """Граничный тест: получение пустого изображения"""
+        """Граничный тест: получение изображения для пустой клетки"""
         on_complete = Mock()
         
         with patch('ugraaa.tk.Toplevel'), \
@@ -331,8 +393,11 @@ class TestWirePuzzle:
             puzzle.empty_image = MagicMock()
             puzzle.images = [MagicMock() for _ in range(8)]
             
+            # Находим индекс, где в board хранится None
             none_index = puzzle.board.index(None)
             img = puzzle.get_image(none_index)
+            
+            # Должно вернуться пустое изображение
             assert img == puzzle.empty_image
 
 # ============= ТЕСТЫ ДЛЯ ПРОСМОТРА ДОКУМЕНТОВ =============
@@ -357,7 +422,7 @@ class TestDocumentViewer:
             
             assert viewer is not None
     
-    @patch('ugraaa.messagebox.askyesno')
+    @patch('tkinter.messagebox.askyesno')
     def test_choose_document_2_success(self, mock_askyesno, root):
         """Позитивный тест: выбор правильного документа с подтверждением"""
         mock_askyesno.return_value = True
@@ -381,7 +446,7 @@ class TestDocumentViewer:
             on_choice.assert_called_once_with(2)
             viewer.viewer_window.destroy.assert_called_once()
     
-    @patch('ugraaa.messagebox.askyesno')
+    @patch('tkinter.messagebox.askyesno')
     def test_choose_document_2_cancel(self, mock_askyesno, root):
         """Негативный тест: отмена выбора правильного документа"""
         mock_askyesno.return_value = False
@@ -405,7 +470,7 @@ class TestDocumentViewer:
             on_choice.assert_not_called()
             viewer.viewer_window.destroy.assert_not_called()
     
-    @patch('ugraaa.messagebox.askyesno')
+    @patch('tkinter.messagebox.askyesno')
     def test_choose_document_1(self, mock_askyesno, root):
         """Негативный тест: выбор неправильного документа"""
         mock_askyesno.return_value = True
@@ -428,7 +493,7 @@ class TestDocumentViewer:
             viewer.choose_document(1)
             on_choice.assert_called_once_with(1)
     
-    @patch('ugraaa.messagebox.askyesno')
+    @patch('tkinter.messagebox.askyesno')
     def test_choose_document_3(self, mock_askyesno, root):
         """Негативный тест: выбор другого неправильного документа"""
         mock_askyesno.return_value = True
@@ -518,9 +583,9 @@ class TestGame:
             
             mock_show_prologue.assert_called_once()
 
-# ============= ТЕСТЫ ДЛЯ МЕТОДА CHECK_KEY (5 тестов) =============
+# ============= ТЕСТЫ ДЛЯ МЕТОДА CHECK_KEY =============
 class TestCheckKey:
-    """Тесты для метода check_key"""
+    """Тесты для метода check_key - 6 тестов"""
     
     def test_check_key_correct(self, game):
         """Позитивный тест: выбор правильного документа (№2)"""
@@ -538,16 +603,26 @@ class TestCheckKey:
     
     def test_check_key_wrong_3(self, game):
         """Негативный тест: выбор неправильного документа (№3)"""
-        with patch.object(game, 'death_ending') as mock_death:
-            game.check_key(3)
-            mock_death.assert_called_once()
+        try:
+            with patch.object(game, 'show_death_from_document') as mock_death:
+                game.check_key(3)
+                mock_death.assert_called_once()
+        except AttributeError:
+            with patch.object(game, 'death_ending') as mock_death:
+                game.check_key(3)
+                mock_death.assert_called_once()
         assert game.has_basement_key == False
     
     def test_check_key_invalid_string(self, game):
         """Граничный тест: передача строки вместо числа"""
-        with patch.object(game, 'death_ending') as mock_death:
-            game.check_key("2")
-            mock_death.assert_called_once()
+        try:
+            with patch.object(game, 'show_death_from_document') as mock_death:
+                game.check_key("2")
+                mock_death.assert_called_once()
+        except AttributeError:
+            with patch.object(game, 'death_ending') as mock_death:
+                game.check_key("2")
+                mock_death.assert_called_once()
     
     def test_check_key_after_already_found(self, game):
         """Граничный тест: повторный выбор документа после нахождения ключа"""
@@ -556,10 +631,21 @@ class TestCheckKey:
             game.check_key(2)
             mock_success.assert_called_once()
             assert game.has_basement_key == True
+    
+    def test_check_key_none(self, game):
+        """Граничный тест: передача None"""
+        try:
+            with patch.object(game, 'show_death_from_document') as mock_death:
+                game.check_key(None)
+                mock_death.assert_called_once()
+        except AttributeError:
+            with patch.object(game, 'death_ending') as mock_death:
+                game.check_key(None)
+                mock_death.assert_called_once()
 
-# ============= ТЕСТЫ ДЛЯ МЕТОДА SAVE_GAME (5 тестов) =============
+# ============= ТЕСТЫ ДЛЯ МЕТОДА SAVE_GAME =============
 class TestSaveGame:
-    """Тесты для метода save_game"""
+    """Тесты для метода save_game - 5 тестов"""
     
     def test_save_game_success(self, game):
         """Позитивный тест: успешное сохранение"""
@@ -570,7 +656,7 @@ class TestSaveGame:
         mock_file = mock_open()
         with patch('builtins.open', mock_file):
             with patch('json.dump') as mock_json_dump:
-                with patch('ugraaa.messagebox.showinfo') as mock_msg:
+                with patch('tkinter.messagebox.showinfo') as mock_msg:
                     with patch.object(game, 'get_location_name', return_value="Компьютерный класс"):
                         game.save_game()
                         
@@ -581,14 +667,14 @@ class TestSaveGame:
     def test_save_game_permission_error(self, game):
         """Негативный тест: ошибка прав доступа"""
         with patch('builtins.open', side_effect=PermissionError("Нет прав")):
-            with patch('ugraaa.messagebox.showerror') as mock_error:
+            with patch('tkinter.messagebox.showerror') as mock_error:
                 game.save_game()
                 mock_error.assert_called_once()
     
     def test_save_game_disk_full(self, game):
         """Негативный тест: диск полон"""
         with patch('builtins.open', side_effect=OSError("Нет места")):
-            with patch('ugraaa.messagebox.showerror') as mock_error:
+            with patch('tkinter.messagebox.showerror') as mock_error:
                 game.save_game()
                 mock_error.assert_called_once()
     
@@ -606,7 +692,7 @@ class TestSaveGame:
         mock_file = mock_open()
         with patch('builtins.open', mock_file):
             with patch('json.dump') as mock_json_dump:
-                with patch('ugraaa.messagebox.showinfo'):
+                with patch('tkinter.messagebox.showinfo'):
                     with patch.object(game, 'get_location_name', return_value="Подвал"):
                         game.save_game()
                         mock_json_dump.assert_called_once()
@@ -616,14 +702,14 @@ class TestSaveGame:
         mock_file = mock_open()
         with patch('builtins.open', mock_file):
             with patch('json.dump') as mock_json_dump:
-                with patch('ugraaa.messagebox.showinfo'):
+                with patch('tkinter.messagebox.showinfo'):
                     with patch.object(game, 'get_location_name', return_value="Главное меню"):
                         game.save_game()
                         mock_json_dump.assert_called_once()
 
-# ============= ТЕСТЫ ДЛЯ МЕТОДА LOAD_GAME (5 тестов) =============
+# ============= ТЕСТЫ ДЛЯ МЕТОДА LOAD_GAME =============
 class TestLoadGame:
-    """Тесты для метода load_game"""
+    """Тесты для метода load_game - 6 тестов"""
     
     def test_load_game_success(self, game):
         """Позитивный тест: успешная загрузка"""
@@ -641,7 +727,7 @@ class TestLoadGame:
         mock_file = mock_open(read_data=json.dumps(test_data))
         with patch('builtins.open', mock_file):
             with patch('json.load', return_value=test_data):
-                with patch('ugraaa.messagebox.showinfo'):
+                with patch('tkinter.messagebox.showinfo') as mock_msg:
                     with patch.object(game, 'room_22') as mock_room:
                         game.load_game()
                         
@@ -649,11 +735,12 @@ class TestLoadGame:
                         assert game.has_museum_key == True
                         assert "part1" in game.password_parts
                         mock_room.assert_called_once()
+                        mock_msg.assert_called_once()
     
     def test_load_game_file_not_found(self, game):
         """Негативный тест: файл не найден"""
         with patch('builtins.open', side_effect=FileNotFoundError):
-            with patch('ugraaa.messagebox.showerror') as mock_error:
+            with patch('tkinter.messagebox.showerror') as mock_error:
                 game.load_game()
                 mock_error.assert_called_once_with("❌ Ошибка", "Нет сохранённых файлов!")
     
@@ -661,7 +748,7 @@ class TestLoadGame:
         """Негативный тест: поврежденный JSON"""
         with patch('builtins.open', mock_open(read_data="{-invalid-json}")):
             with patch('json.load', side_effect=json.JSONDecodeError("Error", "", 0)):
-                with patch('ugraaa.messagebox.showerror') as mock_error:
+                with patch('tkinter.messagebox.showerror') as mock_error:
                     game.load_game()
                     mock_error.assert_called_once()
     
@@ -670,27 +757,45 @@ class TestLoadGame:
         incomplete_data = {
             "solved_puzzle": True,
             "has_museum_key": True
+            # отсутствуют has_basement_key, sphinx_passed и другие
         }
         
-        with patch('builtins.open', mock_open()):
+        mock_file = mock_open(read_data=json.dumps(incomplete_data))
+        with patch('builtins.open', mock_file):
             with patch('json.load', return_value=incomplete_data):
-                with patch('ugraaa.messagebox.showinfo'):
-                    with patch.object(game, 'first_floor'):
-                        game.load_game()
+                with patch('tkinter.messagebox.showerror') as mock_error:
+                    game.load_game()
+                    # Должна быть ошибка из-за отсутствия ключей
+                    mock_error.assert_called_once()
     
     def test_load_game_wrong_types(self, game):
         """Негативный тест: неправильные типы данных"""
         wrong_data = {
-            "solved_puzzle": "True",
-            "has_museum_key": 1,
-            "password_parts": "part1"
+            "solved_puzzle": "True",  # строка вместо bool
+            "has_museum_key": 1,       # число вместо bool
+            "has_basement_key": "False",
+            "sphinx_passed": "True",
+            "password_parts": "part1", # строка вместо списка
+            "code_words": "xx",        # строка вместо словаря
+            "current_location": 123,    # число вместо строки
+            "dialogue_stage": "3"       # строка вместо числа
         }
         
-        with patch('builtins.open', mock_open()):
+        mock_file = mock_open(read_data=json.dumps(wrong_data))
+        with patch('builtins.open', mock_file):
             with patch('json.load', return_value=wrong_data):
-                with patch('ugraaa.messagebox.showinfo'):
-                    with patch.object(game, 'first_floor'):
-                        game.load_game()
+                with patch('tkinter.messagebox.showerror') as mock_error:
+                    game.load_game()
+                    # Должна быть ошибка из-за неправильных типов
+                    mock_error.assert_called_once()
+    
+    def test_load_game_empty_file(self, game):
+        """Граничный тест: пустой файл"""
+        with patch('builtins.open', mock_open(read_data="")):
+            with patch('json.load', side_effect=json.JSONDecodeError("Empty", "", 0)):
+                with patch('tkinter.messagebox.showerror') as mock_error:
+                    game.load_game()
+                    mock_error.assert_called_once()
 
 # ============= ТЕСТЫ ДЛЯ ЛОКАЦИЙ =============
 class TestGameLocations:
@@ -721,7 +826,7 @@ class TestGameLocations:
 
 # ============= ТЕСТЫ ДЛЯ МЕТОДОВ НАВИГАЦИИ =============
 class TestNavigation:
-    """Тесты для методов навигации"""
+    """Тесты для методов навигации - 4 теста"""
     
     def test_go_to_basement(self, game):
         """Тест перехода в подвал с сохранением предыдущей локации"""
@@ -754,7 +859,7 @@ class TestNavigation:
 
 # ============= ТЕСТЫ ДЛЯ ДИАЛОГОВ =============
 class TestDialogue:
-    """Тесты для диалоговой системы"""
+    """Тесты для диалоговой системы - 2 теста"""
     
     def test_dialogue_progression(self, game):
         """Тест progression диалога"""
@@ -784,10 +889,11 @@ class TestDialogue:
         
         with patch.object(game, 'update_android_dialogue'):
             game.next_dialogue_stage()
+            assert game.dialogue_stage == 1000  # Просто увеличивается
 
 # ============= ТЕСТЫ ДЛЯ ГРАНИЧНЫХ СЛУЧАЕВ =============
 class TestEdgeCases:
-    """Тесты для граничных случаев"""
+    """Тесты для граничных случаев - 3 теста"""
     
     def test_empty_password_parts(self, game):
         """Граничный тест: пустые части пароля"""
@@ -801,6 +907,7 @@ class TestEdgeCases:
             
             mock_image_open.side_effect = FileNotFoundError
             game.room_22()
+            # Просто проверяем что не упало
     
     def test_code_words_empty(self, game):
         """Граничный тест: пустые кодовые слова"""
@@ -811,26 +918,28 @@ class TestEdgeCases:
              patch('ugraaa.tk.Frame'), \
              patch('ugraaa.tk.Button'), \
              patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Entry'):
+             patch('ugraaa.tk.Entry'), \
+             patch('tkinter.messagebox.showinfo'):
             
             game.show_password_window()
+            # Просто проверяем что не упало
     
     def test_show_help(self, game):
         """Позитивный тест: показ справки"""
-        with patch('ugraaa.messagebox.showinfo') as mock_showinfo:
+        with patch('tkinter.messagebox.showinfo') as mock_showinfo:
             game.show_help()
             mock_showinfo.assert_called_once()
 
 # ============= ИНТЕГРАЦИОННЫЕ ТЕСТЫ =============
 class TestIntegration:
-    """Интеграционные тесты"""
+    """Интеграционные тесты - 1 тест"""
     
     def test_full_game_flow(self, game):
         """Тест полного прохождения игры"""
         with patch('ugraaa.Image.open') as mock_image_open, \
              patch('ugraaa.ImageTk.PhotoImage'), \
-             patch('ugraaa.messagebox.showinfo'), \
-             patch('ugraaa.messagebox.askyesno', return_value=True), \
+             patch('tkinter.messagebox.showinfo'), \
+             patch('tkinter.messagebox.askyesno', return_value=True), \
              patch('ugraaa.tk.Canvas'), \
              patch('ugraaa.tk.Frame'), \
              patch('ugraaa.tk.Button'), \
@@ -877,7 +986,7 @@ class TestIntegration:
             game.current_location = "room_22"
             
             # Находим ключ от музея
-            with patch('ugraaa.messagebox.showinfo'):
+            with patch('tkinter.messagebox.showinfo'):
                 game.find_museum_key()
             assert game.has_museum_key == True
             
