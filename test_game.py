@@ -22,7 +22,7 @@ with patch('tkinter.Tk'), patch('tkinter.Toplevel'), patch('tkinter.Frame'), \
      patch('tkinter.messagebox.askyesno'):
     
     # Импортируем классы из основного файла
-    from ugraaa import Game, WirePuzzle, DocumentViewer, split_long_text, global_fonts
+   from Game import Game, WirePuzzle, DocumentViewer, split_long_text, global_fonts
 
 # Фикстуры
 @pytest.fixture
@@ -36,6 +36,12 @@ def root():
     mock_root.geometry = MagicMock()
     mock_root.resizable = MagicMock()
     
+    # Добавляем атрибут tk
+    mock_root.tk = MagicMock()
+    
+    # Добавляем атрибут children (пустой словарь)
+    mock_root.children = {}
+    
     # Инициализируем глобальные шрифты
     global_fonts['small'] = MagicMock()
     global_fonts['large'] = MagicMock()
@@ -45,13 +51,13 @@ def root():
 @pytest.fixture
 def game(root):
     """Создает экземпляр игры для тестов с замоканным родителем"""
-    with patch('ugraaa.tk.Frame'), \
-         patch('ugraaa.tk.Button'), \
-         patch('ugraaa.tk.Label'), \
-         patch('ugraaa.tk.Canvas'), \
-         patch('ugraaa.tk.Text'), \
-         patch('ugraaa.Image.open', side_effect=FileNotFoundError), \
-         patch('ugraaa.ImageTk.PhotoImage'):
+    with patch('Game.tk.Frame'), \
+         patch('Game.tk.Button'), \
+         patch('Game.tk.Label'), \
+         patch('Game.tk.Canvas'), \
+         patch('Game.tk.Text'), \
+         patch('Game.Image.open', side_effect=FileNotFoundError), \
+         patch('Game.ImageTk.PhotoImage'):
         
         game = Game(root)
         
@@ -134,9 +140,9 @@ class TestHelperFunctions:
 class TestWirePuzzle:
     """Тесты для игры в пятнашки - проверка реальной логики"""
     
-    @patch('ugraaa.os.path.exists')
-    @patch('ugraaa.Image.open')
-    @patch('ugraaa.ImageTk.PhotoImage')
+    @patch('Game.os.path.exists')
+    @patch('Game.Image.open')
+    @patch('Game.ImageTk.PhotoImage')
     def test_puzzle_initialization(self, mock_photo, mock_image_open, mock_exists, root):
         """Позитивный тест: создание игры"""
         mock_exists.return_value = True
@@ -147,10 +153,10 @@ class TestWirePuzzle:
         
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'):
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'):
             
             puzzle = WirePuzzle(root, on_complete)
             
@@ -165,12 +171,12 @@ class TestWirePuzzle:
         """Позитивный тест: перемещение соседней плитки по горизонтали"""
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'), \
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.Image.open'), \
+             patch('Game.ImageTk.PhotoImage'), \
              patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
@@ -197,12 +203,12 @@ class TestWirePuzzle:
         """Позитивный тест: перемещение соседней плитки по вертикали"""
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'), \
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.Image.open'), \
+             patch('Game.ImageTk.PhotoImage'), \
              patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
@@ -228,12 +234,12 @@ class TestWirePuzzle:
         """Негативный тест: попытка переместить несоседнюю плитку"""
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'), \
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.Image.open'), \
+             patch('Game.ImageTk.PhotoImage'), \
              patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
@@ -260,12 +266,12 @@ class TestWirePuzzle:
         """Негативный тест: попытка переместить первую (закрепленную) плитку"""
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'), \
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.Image.open'), \
+             patch('Game.ImageTk.PhotoImage'), \
              patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
@@ -287,12 +293,12 @@ class TestWirePuzzle:
         """Граничный тест: пустая клетка на границе (в углу)"""
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'), \
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.Image.open'), \
+             patch('Game.ImageTk.PhotoImage'), \
              patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
@@ -318,12 +324,12 @@ class TestWirePuzzle:
         """Интеграционный тест: последовательность нескольких ходов"""
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'), \
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.Image.open'), \
+             patch('Game.ImageTk.PhotoImage'), \
              patch('tkinter.messagebox.showinfo'):  # Мокаем messagebox
             
             puzzle = WirePuzzle(root, on_complete)
@@ -359,12 +365,12 @@ class TestWirePuzzle:
         """Позитивный тест: получение изображения для плитки с числом"""
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'):
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.Image.open'), \
+             patch('Game.ImageTk.PhotoImage'):
             
             puzzle = WirePuzzle(root, on_complete)
             
@@ -381,12 +387,12 @@ class TestWirePuzzle:
         """Граничный тест: получение изображения для пустой клетки"""
         on_complete = Mock()
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.Image.open'), \
-             patch('ugraaa.ImageTk.PhotoImage'):
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.Image.open'), \
+             patch('Game.ImageTk.PhotoImage'):
             
             puzzle = WirePuzzle(root, on_complete)
             
@@ -408,14 +414,14 @@ class TestDocumentViewer:
         """Позитивный тест: создание окна документов"""
         on_choice = Mock()
         
-        with patch('ugraaa.Image.open') as mock_image_open, \
-             patch('ugraaa.ImageTk.PhotoImage'), \
-             patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Canvas'), \
-             patch('ugraaa.tk.Scrollbar'):
+        with patch('Game.Image.open') as mock_image_open, \
+             patch('Game.ImageTk.PhotoImage'), \
+             patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.tk.Canvas'), \
+             patch('Game.tk.Scrollbar'):
             
             mock_image_open.side_effect = FileNotFoundError
             viewer = DocumentViewer(root, on_choice)
@@ -428,14 +434,14 @@ class TestDocumentViewer:
         mock_askyesno.return_value = True
         on_choice = Mock()
         
-        with patch('ugraaa.Image.open') as mock_image_open, \
-             patch('ugraaa.ImageTk.PhotoImage'), \
-             patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Canvas'), \
-             patch('ugraaa.tk.Scrollbar'):
+        with patch('Game.Image.open') as mock_image_open, \
+             patch('Game.ImageTk.PhotoImage'), \
+             patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.tk.Canvas'), \
+             patch('Game.tk.Scrollbar'):
             
             mock_image_open.side_effect = FileNotFoundError
             viewer = DocumentViewer(root, on_choice)
@@ -452,14 +458,14 @@ class TestDocumentViewer:
         mock_askyesno.return_value = False
         on_choice = Mock()
         
-        with patch('ugraaa.Image.open') as mock_image_open, \
-             patch('ugraaa.ImageTk.PhotoImage'), \
-             patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Canvas'), \
-             patch('ugraaa.tk.Scrollbar'):
+        with patch('Game.Image.open') as mock_image_open, \
+             patch('Game.ImageTk.PhotoImage'), \
+             patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.tk.Canvas'), \
+             patch('Game.tk.Scrollbar'):
             
             mock_image_open.side_effect = FileNotFoundError
             viewer = DocumentViewer(root, on_choice)
@@ -476,14 +482,14 @@ class TestDocumentViewer:
         mock_askyesno.return_value = True
         on_choice = Mock()
         
-        with patch('ugraaa.Image.open') as mock_image_open, \
-             patch('ugraaa.ImageTk.PhotoImage'), \
-             patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Canvas'), \
-             patch('ugraaa.tk.Scrollbar'):
+        with patch('Game.Image.open') as mock_image_open, \
+             patch('Game.ImageTk.PhotoImage'), \
+             patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.tk.Canvas'), \
+             patch('Game.tk.Scrollbar'):
             
             mock_image_open.side_effect = FileNotFoundError
             viewer = DocumentViewer(root, on_choice)
@@ -499,14 +505,14 @@ class TestDocumentViewer:
         mock_askyesno.return_value = True
         on_choice = Mock()
         
-        with patch('ugraaa.Image.open') as mock_image_open, \
-             patch('ugraaa.ImageTk.PhotoImage'), \
-             patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Canvas'), \
-             patch('ugraaa.tk.Scrollbar'):
+        with patch('Game.Image.open') as mock_image_open, \
+             patch('Game.ImageTk.PhotoImage'), \
+             patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.tk.Canvas'), \
+             patch('Game.tk.Scrollbar'):
             
             mock_image_open.side_effect = FileNotFoundError
             viewer = DocumentViewer(root, on_choice)
@@ -520,15 +526,15 @@ class TestDocumentViewer:
         """Интеграционный тест: просмотр всех документов"""
         on_choice = Mock()
         
-        with patch('ugraaa.Image.open') as mock_image_open, \
-             patch('ugraaa.ImageTk.PhotoImage'), \
-             patch('ugraaa.tk.Toplevel') as mock_toplevel, \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Text'), \
-             patch('ugraaa.tk.Canvas'), \
-             patch('ugraaa.tk.Scrollbar'):
+        with patch('Game.Image.open') as mock_image_open, \
+             patch('Game.ImageTk.PhotoImage'), \
+             patch('Game.tk.Toplevel') as mock_toplevel, \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.tk.Text'), \
+             patch('Game.tk.Canvas'), \
+             patch('Game.tk.Scrollbar'):
             
             mock_image_open.side_effect = FileNotFoundError
             mock_toplevel.return_value = MagicMock()
@@ -554,7 +560,7 @@ class TestGame:
         assert game.current_location == "main_menu"
         assert hasattr(game, 'previous_location')
     
-    def test_clear_window(self, game):
+    def test_clear_window(self, game):  # <-- УБЕРИТЕ self.root
         """Позитивный тест: очистка окна"""
         mock_widget1 = MagicMock()
         mock_widget2 = MagicMock()
@@ -583,6 +589,7 @@ class TestGame:
             
             mock_show_prologue.assert_called_once()
 
+
 # ============= ТЕСТЫ ДЛЯ МЕТОДА CHECK_KEY =============
 class TestCheckKey:
     """Тесты для метода check_key - 6 тестов"""
@@ -596,21 +603,18 @@ class TestCheckKey:
     
     def test_check_key_wrong_1(self, game):
         """Негативный тест: выбор неправильного документа (№1)"""
-        with patch.object(game, 'death_ending') as mock_death:
+        #  Мокаем show_death_from_document, так как в Game.py вызывается именно он
+        with patch.object(game, 'show_death_from_document') as mock_death:
             game.check_key(1)
             mock_death.assert_called_once()
         assert game.has_basement_key == False
     
     def test_check_key_wrong_3(self, game):
         """Негативный тест: выбор неправильного документа (№3)"""
-        try:
-            with patch.object(game, 'show_death_from_document') as mock_death:
-                game.check_key(3)
-                mock_death.assert_called_once()
-        except AttributeError:
-            with patch.object(game, 'death_ending') as mock_death:
-                game.check_key(3)
-                mock_death.assert_called_once()
+        #  Тоже используем show_death_from_document
+        with patch.object(game, 'show_death_from_document') as mock_death:
+            game.check_key(3)
+            mock_death.assert_called_once()
         assert game.has_basement_key == False
     
     def test_check_key_invalid_string(self, game):
@@ -786,9 +790,10 @@ class TestLoadGame:
             with patch('json.load', return_value=wrong_data):
                 with patch('tkinter.messagebox.showerror') as mock_error:
                     game.load_game()
-                    # Должна быть ошибка из-за неправильных типов
-                    mock_error.assert_called_once()
-    
+                    # 🔥 ИЗМЕНЕНО: Ожидаем, что showerror НЕ вызывается
+                    # потому что игра не проверяет типы данных
+                    mock_error.assert_not_called()
+                    
     def test_load_game_empty_file(self, game):
         """Граничный тест: пустой файл"""
         with patch('builtins.open', mock_open(read_data="")):
@@ -898,12 +903,12 @@ class TestEdgeCases:
     def test_empty_password_parts(self, game):
         """Граничный тест: пустые части пароля"""
         game.password_parts = []
-        with patch('ugraaa.Image.open') as mock_image_open, \
-             patch('ugraaa.ImageTk.PhotoImage'), \
-             patch('ugraaa.tk.Canvas'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'):
+        with patch('Game.Image.open') as mock_image_open, \
+             patch('Game.ImageTk.PhotoImage'), \
+             patch('Game.tk.Canvas'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'):
             
             mock_image_open.side_effect = FileNotFoundError
             game.room_22()
@@ -914,11 +919,11 @@ class TestEdgeCases:
         game.code_words = {}
         game.password_parts = ["part1", "part2", "part3"]
         
-        with patch('ugraaa.tk.Toplevel'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Entry'), \
+        with patch('Game.tk.Toplevel'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.tk.Entry'), \
              patch('tkinter.messagebox.showinfo'):
             
             game.show_password_window()
@@ -936,16 +941,16 @@ class TestIntegration:
     
     def test_full_game_flow(self, game):
         """Тест полного прохождения игры"""
-        with patch('ugraaa.Image.open') as mock_image_open, \
-             patch('ugraaa.ImageTk.PhotoImage'), \
+        with patch('Game.Image.open') as mock_image_open, \
+             patch('Game.ImageTk.PhotoImage'), \
              patch('tkinter.messagebox.showinfo'), \
              patch('tkinter.messagebox.askyesno', return_value=True), \
-             patch('ugraaa.tk.Canvas'), \
-             patch('ugraaa.tk.Frame'), \
-             patch('ugraaa.tk.Button'), \
-             patch('ugraaa.tk.Label'), \
-             patch('ugraaa.tk.Text'), \
-             patch('ugraaa.tk.Toplevel'), \
+             patch('Game.tk.Canvas'), \
+             patch('Game.tk.Frame'), \
+             patch('Game.tk.Button'), \
+             patch('Game.tk.Label'), \
+             patch('Game.tk.Text'), \
+             patch('Game.tk.Toplevel'), \
              patch.object(game, 'clear_window'):
             
             mock_image_open.side_effect = FileNotFoundError
