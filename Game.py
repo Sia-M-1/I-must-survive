@@ -11,13 +11,6 @@ from tkinter.font import Font
 WINDOW_WIDTH = 900
 WINDOW_HEIGHT = 650
 
-# Получаем размеры экрана
-# mport tkinter as tk
-# root = tk.Tk()
-# WINDOW_WIDTH = root.winfo_screenwidth()
-# WINDOW_HEIGHT = root.winfo_screenheight()
-# root.destroy()  # Закрываем временное окно
-
 # Глобальная переменная для хранения ссылок на шрифты
 global_fonts = {}
 
@@ -212,7 +205,7 @@ class WirePuzzle:
             
             self.empty_idx = index
             
-            # ВРЕМЕННО: всегда победа после первого хода (замените на оригинал позже)
+            # ВРЕМЕННАЯ заглушка: всегда победа после первого хода (замените на оригинал позже)
             #messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
             #self.puzzle_window.destroy()
             #self.on_complete()
@@ -613,7 +606,6 @@ class Game:
             
 
     def animate_prologue_gif(self):
-        """Анимирует GIF начала игры один раз"""
         if hasattr(self, 'gif_label') and self.gif_label.winfo_exists():
             # Показываем текущий кадр
             self.gif_label.config(image=self.gif_frames[self.gif_frame_index])
@@ -629,7 +621,6 @@ class Game:
                 self.show_prologue_continue_screen()
 
     def show_prologue_continue_screen(self):
-        """Показывает черный экран с кнопкой продолжения"""
         self.clear_window()
         
         # Черный фон
@@ -1165,7 +1156,7 @@ class Game:
         answer_entry = tk.Entry(input_frame, width=20, font=global_fonts['small'])
         answer_entry.pack(side="left", padx=5)
         
-        # Фрейм для сообщений (результат будет显示在这里)
+        # Фрейм для сообщений
         message_frame = tk.Frame(main_frame, bg='#2a2a2a', height=50)
         message_frame.pack(pady=5, fill="x")
         message_frame.pack_propagate(False)
@@ -1217,7 +1208,7 @@ class Game:
                     # Закрываем окно через 1.5 секунды и возвращаемся в комнату
                     task_window.after(1500, lambda: [task_window.destroy(), self.room_22()])
                 else:
-                    message_label.config(text="ℹ️ Ты уже решил это задание!", fg='#ffd700')
+                    message_label.config(text="Ты уже решил это задание!", fg='#ffd700')
                     # Блокируем всё
                     answer_entry.config(state="disabled")
                     check_btn.config(state="disabled", bg='#6a6a6a')
@@ -1289,7 +1280,6 @@ class Game:
         back_btn.pack(pady=5)
 
     def show_museum_open(self):
-        """Показывает открытый музей (светлый)"""
         self.current_location = "museum_open"
         self.clear_window()
         
@@ -1304,14 +1294,14 @@ class Game:
         except:
             canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#4a3a4a")
             canvas.pack()
-            canvas.create_text(WINDOW_WIDTH//2, 100, text="🏛 МУЗЕЙ (ОТКРЫТ) 🏛",
+            canvas.create_text(WINDOW_WIDTH//2, 100, text="МУЗЕЙ (ОТКРЫТ)",
                             fill="white", font=global_fonts['large'])
         
         # Показываем диалог с андроидом
         self.show_android_dialogue()
         
         # Кнопка выхода - возвращаемся в предыдущую локацию
-        exit_btn = tk.Button(self.parent, text="🚪 Выйти из музея", 
+        exit_btn = tk.Button(self.parent, text="Выйти из музея", 
                             font=global_fonts['small'], bg='#8a4a4a', fg='white',
                             command=self.return_from_museum, width=20, height=1)
         exit_btn.place(relx=0.5, rely=0.9, anchor="center")
@@ -1329,7 +1319,7 @@ class Game:
         """Показывает диалоговое окно с андроидом"""
         dialogue_window = tk.Toplevel(self.parent)
         dialogue_window.title("Ирина Иидуардовна (андроид)")
-        dialogue_window.geometry("600x450")  # Увеличил размер для фона
+        dialogue_window.geometry("600x450") 
         dialogue_window.configure(bg='#2a1a2a')
         dialogue_window.transient(self.parent)
         dialogue_window.grab_set()
@@ -1401,7 +1391,6 @@ class Game:
         self.update_android_dialogue()
         
     def update_android_dialogue(self):
-        """Обновляет диалог с андроидом"""
         # Очищаем фрейм
         for widget in self.dialogue_text_frame.winfo_children():
             widget.destroy()
@@ -1555,8 +1544,8 @@ class Game:
         """Показывает окно для ввода пароля на 4 компьютере"""
         
         # Проверяем, был ли уже введен пароль (можно по наличию чата или доп. переменной)
-        # Для простоты будем проверять, что все части собраны и пароль еще не введен
-        # Создадим новую переменную для отслеживания
+        # Будем проверять, что все части собраны и пароль еще не введен
+        # Новая переменная для отслеживания
         if not hasattr(self, 'password_entered'):
             self.password_entered = False
         
@@ -1672,9 +1661,8 @@ class Game:
         close_btn.pack(pady=5)
         
     def show_teacher_chat(self):
-        """Показывает окно с изображением диалога"""
         dialog_window = tk.Toplevel(self.parent)
-        dialog_window.title("💬 Чат преподавателей")
+        dialog_window.title("Чат преподавателей")
         dialog_window.geometry("600x450+750+100")  # Размер под ваше изображение
         dialog_window.configure(bg='#2b2b2b')
         dialog_window.transient(self.parent)
@@ -1797,7 +1785,6 @@ class Game:
         exit_btn.place(relx=0.5, rely=0.75, anchor="center")  # Внизу
     
     def show_death_from_document(self):
-        """Показывает анимацию скрепки при неверном выборе документа"""
         self.current_location = "death"
         self.clear_window()
         
@@ -1894,7 +1881,7 @@ class Game:
         success_label.pack(padx=30, pady=30)
         
         # Кнопка выхода
-        tk.Button(self.parent, text="🚪 Выйти из кабинета", 
+        tk.Button(self.parent, text="Выйти из кабинета", 
                 font=global_fonts['large'], bg='#8a4a4a', fg='white',
                 command=self.third_floor, width=20, height=2).place(relx=0.5, rely=0.7, anchor="center")
         
@@ -1944,7 +1931,6 @@ class Game:
             self.show_death_screen()
 
     def animate_android_gif_once(self):
-        """Анимирует GIF андроида один раз"""
         if hasattr(self, 'gif_label') and self.gif_label.winfo_exists():
             # Показываем текущий кадр
             self.gif_label.config(image=self.gif_frames[self.gif_frame_index])
@@ -2015,7 +2001,6 @@ class Game:
                 bg='#4a4a4a', fg='white', command=self.return_from_basement, width=17).pack(side="left", padx=0)
 
     def return_from_basement(self):
-        """Возврат из подвала в предыдущую локацию"""
         if self.previous_location == "second_floor_2":
             self.second_floor_2()
         elif self.previous_location == "second_floor_1":
@@ -2024,14 +2009,12 @@ class Game:
             self.second_floor_2()  # По умолчанию
             
     def show_final_ending(self):
-        """Показывает финальную заставку с GIF и затем финальное меню"""
         self.clear_window()
         
         # Сначала показываем GIF
         self.show_final_gif()
 
     def show_final_gif(self):
-        """Показывает GIF-анимацию (растянутую на весь экран)"""
         try:
             from PIL import Image, ImageTk
             
@@ -2114,7 +2097,7 @@ class Game:
                 canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black', highlightthickness=0)
                 canvas.pack()
             
-            # НАДПИСЬ "Выжить обязан" (без фона, белым цветом, крупным шрифтом)
+            # НАДПИСЬ "Выжить обязан" 
             title_text = canvas.create_text(
                 WINDOW_WIDTH//2, WINDOW_HEIGHT//2 - 80,  # Располагаем выше кнопок
                 text="ВЫЖИТЬ ОБЯЗАН",
@@ -2175,7 +2158,6 @@ class Game:
             
 
     def show_simple_final_menu(self):
-        """Простой вариант финального меню на случай ошибок"""
         self.clear_window()
         
         # Создаем холст
@@ -2235,16 +2217,13 @@ class Game:
         )
         
     def show_main_menu_from_final(self):
-        """Возврат в главное меню из финальной заставки"""
         self.current_location = "main_menu"
         self.show_main_menu()
 
     def quit_game(self):
-        """Выход из игры"""
         self.parent.quit()
         
     def good_ending(self):
-        """Хорошая концовка"""
         self.current_location = "good_ending"
         self.clear_window()
         self.show_final_ending()
@@ -2252,7 +2231,7 @@ class Game:
 
 
     def save_game(self):
-        """Сохраняет состояние игры"""
+        #  Сохраняет состояние игры
         saved_data = {
             "solved_puzzle": self.solved_puzzle,
             "has_museum_key": self.has_museum_key,
@@ -2261,7 +2240,7 @@ class Game:
             "password_parts": self.password_parts,
             "code_words": self.code_words,
             "current_location": self.current_location,
-            "dialogue_stage": getattr(self, 'dialogue_stage', 0)  # Добавить
+            "dialogue_stage": getattr(self, 'dialogue_stage', 0)  
         }
         try:
             with open("save.json", "w", encoding='utf-8') as f:
@@ -2271,7 +2250,7 @@ class Game:
             messagebox.showerror("❌ Ошибка", f"Не удалось сохранить игру: {e}")
 
     def get_location_name(self):
-        """Возвращает название текущей локации"""
+        # Возвращает название текущей локации
         locations = {
             "first_floor": "Первый этаж",
             "second_floor_1": "Второй этаж (начало коридора)",
@@ -2290,7 +2269,7 @@ class Game:
         return locations.get(self.current_location, "Неизвестно")
 
     def load_game(self):
-        """Загружает состояние игры"""
+       # Загружает состояние игры
         try:
             with open("save.json", "r", encoding='utf-8') as f:
                 saved_data = json.load(f)
@@ -2301,7 +2280,7 @@ class Game:
                 self.password_parts = saved_data["password_parts"]
                 self.code_words = saved_data.get("code_words", {})
                 self.current_location = saved_data.get("current_location", "first_floor")
-                self.dialogue_stage = saved_data.get("dialogue_stage", 0)  # Добавить
+                self.dialogue_stage = saved_data.get("dialogue_stage", 0)  
                 
                 messagebox.showinfo("💾 Загрузка", f"Игра успешно загружена!\nПродолжаем с: {self.get_location_name()}")
                 
@@ -2312,7 +2291,7 @@ class Game:
                     self.second_floor_1()
                 elif self.current_location == "second_floor_2":
                     self.second_floor_2()
-                elif self.current_location == "room_17":  # Добавлено ДО else
+                elif self.current_location == "room_17":  
                     self.room_17()
                 elif self.current_location == "museum_closed":
                     self.show_museum_closed()
@@ -2340,7 +2319,7 @@ class Game:
             messagebox.showerror("❌ Ошибка", f"Ошибка загрузки: {e}")
 
     def show_help(self):
-        """Справочная информация по игре"""
+         # Справочная информация по игре
         help_text = """📖 СПРАВКА ПО ИГРЕ 📖     
 
 Добро пожаловать в нашу игру
