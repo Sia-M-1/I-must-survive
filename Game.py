@@ -2023,44 +2023,231 @@ class Game:
         else:
             self.second_floor_2()  # По умолчанию
             
+    def show_final_ending(self):
+        """Показывает финальную заставку с GIF и затем финальное меню"""
+        self.clear_window()
+        
+        # Сначала показываем GIF
+        self.show_final_gif()
 
+    def show_final_gif(self):
+        """Показывает GIF-анимацию (растянутую на весь экран)"""
+        try:
+            from PIL import Image, ImageTk
+            
+            # Открываем GIF
+            gif_path = "final.gif"
+            if not os.path.exists(gif_path):
+                self.show_final_menu()
+                return
+            
+            # Создаем холст для GIF размером с окно игры
+            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black', highlightthickness=0)
+            canvas.pack()
+            
+            # Загружаем GIF
+            gif_image = Image.open(gif_path)
+            
+            # Получаем все кадры GIF и растягиваем на весь экран
+            frames = []
+            try:
+                while True:
+                    frame = gif_image.copy()
+                    # Растягиваем до размеров окна игры (WINDOW_WIDTH x WINDOW_HEIGHT)
+                    frame = frame.resize((WINDOW_WIDTH, WINDOW_HEIGHT), Image.Resampling.LANCZOS)
+                    frames.append(ImageTk.PhotoImage(frame))
+                    gif_image.seek(gif_image.tell() + 1)
+            except EOFError:
+                pass
+            
+            if not frames:
+                self.show_final_menu()
+                return
+            
+            # Создаем изображение на холсте
+            image_item = canvas.create_image(WINDOW_WIDTH//2, WINDOW_HEIGHT//2, image=frames[0])
+            
+            # Функция для анимации
+            current_frame = 0
+            
+            def update_frame():
+                nonlocal current_frame
+                current_frame += 1
+                if current_frame < len(frames):
+                    canvas.itemconfig(image_item, image=frames[current_frame])
+                    self.parent.after(50, update_frame)
+                else:
+                    # GIF закончился, показываем финальное меню
+                    self.parent.after(500, self.show_final_menu)
+            
+            # Запускаем анимацию
+            self.parent.after(50, update_frame)
+            
+            # Сохраняем ссылки на кадры
+            self.final_gif_frames = frames
+            
+        except Exception as e:
+            print(f"Ошибка при загрузке GIF: {e}")
+            self.show_final_menu()
+
+    def show_final_menu(self):
+        """Показывает финальное меню с растянутым фоном, надписью и кнопками"""
+        self.clear_window()
+        
+        try:
+            from PIL import Image, ImageTk
+            
+            # Загружаем фоновое изображение и растягиваем на весь экран
+            bg_path = "final_fon.png"
+            if os.path.exists(bg_path):
+                bg_image = Image.open(bg_path)
+                # Растягиваем до размеров окна игры
+                bg_image = bg_image.resize((WINDOW_WIDTH, WINDOW_HEIGHT), Image.Resampling.LANCZOS)
+                self.final_bg_photo = ImageTk.PhotoImage(bg_image)
+                
+                # Создаем холст с растянутым фоном
+                canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, highlightthickness=0)
+                canvas.pack()
+                canvas.create_image(WINDOW_WIDTH//2, WINDOW_HEIGHT//2, image=self.final_bg_photo)
+            else:
+                # Если фон не найден, создаем черный фон
+                canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg='black', highlightthickness=0)
+                canvas.pack()
+            
+            # НАДПИСЬ "Выжить обязан" (без фона, белым цветом, крупным шрифтом)
+            title_text = canvas.create_text(
+                WINDOW_WIDTH//2, WINDOW_HEIGHT//2 - 80,  # Располагаем выше кнопок
+                text="ВЫЖИТЬ ОБЯЗАН",
+                
+                font=('Arial', 36, 'bold'),
+                fill='white',  # Белый цвет
+                tags="title"
+            )
+            
+            # Стиль кнопок как в главном меню
+            button_style = {
+                'font': ('Arial', 18, 'bold'),
+                'bg': '#1f3a92',  # Такой же синий как в главном меню
+                'fg': 'white',
+                'activebackground': '#2a4ab0',
+                'activeforeground': 'white',
+                'bd': 2,
+                'relief': 'raised',
+                'width': 15,
+                'height': 1,
+                'cursor': 'hand2'
+            }
+            
+            # Кнопка "Главное меню" - ниже надписи
+            menu_btn = tk.Button(
+                self.parent,
+                text="ГЛАВНОЕ МЕНЮ",
+                command=self.show_main_menu_from_final,
+                **button_style
+            )
+            
+            # Размещаем кнопку на холсте
+            canvas.create_window(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 + 20, window=menu_btn)
+            
+            # Кнопка "Выйти" - еще ниже
+            exit_btn = tk.Button(
+                self.parent,
+                text="ВЫЙТИ",
+                command=self.quit_game,
+                **button_style
+            )
+            
+            # Размещаем кнопку на холсте еще ниже
+            canvas.create_window(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 + 80, window=exit_btn)
+            
+            # Надпись внизу (копирайт)
+            footer_text = canvas.create_text(
+                WINDOW_WIDTH//2, WINDOW_HEIGHT - 50,
+                text="© 2026 Все права защищены",
+                font=('Arial', 12),
+                fill='white',
+                tags="footer"
+            )
+            
+        except Exception as e:
+            print(f"Ошибка при создании финального меню: {e}")
+            self.show_simple_final_menu()
+            
+
+    def show_simple_final_menu(self):
+        """Простой вариант финального меню на случай ошибок"""
+        self.clear_window()
+        
+        # Создаем холст
+        canvas = tk.Canvas(self.parent, width=800, height=600, bg='black', highlightthickness=0)
+        canvas.pack()
+        
+        # Надпись "Выжить обязан"
+        canvas.create_text(
+            400, 250,
+            text="ВЫЖИТЬ ОБЯЗАН",
+            font=('Arial', 36, 'bold'),
+            fill='white'
+        )
+        
+        # Стиль кнопок
+        button_style = {
+            'font': ('Arial', 18, 'bold'),
+            'bg': '#4a7a9c',
+            'fg': 'white',
+            'activebackground': '#5a8ab0',
+            'activeforeground': 'white',
+            'bd': 2,
+            'relief': 'raised',
+            'width': 15,
+            'height': 1,
+            'cursor': 'hand2'
+        }
+        
+        # Кнопка "Главное меню"
+        menu_btn = tk.Button(
+            self.parent,
+            text="ГЛАВНОЕ МЕНЮ",
+            bg='#1f3a92', 
+            fg='white',
+            command=self.show_main_menu_from_final,
+            **button_style
+        )
+        canvas.create_window(400, 350, window=menu_btn)
+        
+        # Кнопка "Выйти"
+        exit_btn = tk.Button(
+            self.parent,
+            text="ВЫЙТИ",
+            bg='#1f3a92', 
+            fg='white',
+            command=self.quit_game,
+            **button_style
+        )
+        canvas.create_window(400, 410, window=exit_btn)
+        
+        # Надпись внизу
+        canvas.create_text(
+            400, 550,
+            text="© 2026 Все права защищены",
+            font=('Arial', 12),
+            fill='white'
+        )
+        
+    def show_main_menu_from_final(self):
+        """Возврат в главное меню из финальной заставки"""
+        self.current_location = "main_menu"
+        self.show_main_menu()
+
+    def quit_game(self):
+        """Выход из игры"""
+        self.parent.quit()
+        
     def good_ending(self):
+        """Хорошая концовка"""
         self.current_location = "good_ending"
         self.clear_window()
-
-        try:
-            img = Image.open("ending.png")
-            img = img.resize((WINDOW_WIDTH, WINDOW_HEIGHT))
-            self.bg_image = ImageTk.PhotoImage(img)
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
-            canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
-            canvas.pack()
-        except:
-            canvas = tk.Canvas(self.parent, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="#87CEEB")
-            canvas.pack()
-
-            # Символическое солнце
-            canvas.create_text(400, 150, text="☀️", font=global_fonts['large'], fill="yellow")
-
-        # Титры (без черного фона)
-        credits_frame = tk.Frame(self.parent, bg='#87CEEB')
-        credits_frame.place(relx=0.5, rely=0.5, anchor="center")  # По центру экрана
-
-        credits_text = """Создатели игры: Леденцы из барбариски
-    Вдохновлено историей колледжа Винкс
-    © 2026 Все права защищены"""
-
-        credits_label = tk.Label(credits_frame,
-                                text=credits_text,
-                                font=global_fonts['small'], bg='#87CEEB', fg='#000080', justify="center")
-        credits_label.pack()
-
-        # Кнопка в главное меню (чуть ниже)
-        tk.Button(self.parent,
-                text="В главное меню",
-                font=global_fonts['large'],
-                bg='#1f3a92', fg='white', activebackground='#6a6a6a',
-                command=self.show_main_menu, width=20, height=2).place(relx=0.5, rely=0.7, anchor="center")
+        self.show_final_ending()
         
 
 
