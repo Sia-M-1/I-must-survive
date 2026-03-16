@@ -213,17 +213,17 @@ class WirePuzzle:
             self.empty_idx = index
             
             # ВРЕМЕННО: всегда победа после первого хода (замените на оригинал позже)
-            messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
-            self.puzzle_window.destroy()
-            self.on_complete()
-            return
+            #messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
+            #self.puzzle_window.destroy()
+            #self.on_complete()
+            #return
             
             # Проверяем победу
-            # if self.board == [0, None, 1, 2, 3, 4, 5, 6, 7]:
-            #     messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
-            #     self.puzzle_window.destroy()
-            #     self.on_complete()
-    
+            if self.board == [0, None, 1, 2, 3, 4, 5, 6, 7]:
+                messagebox.showinfo("✅ Успех!", "Свет в коридоре загорелся! Электричество восстановлено!")
+                self.puzzle_window.destroy()
+                self.on_complete()
+        
     def get_image(self, index):
         """Возвращает изображение для позиции"""
         if self.board[index] is None:
@@ -1328,7 +1328,7 @@ class Game:
     def show_android_dialogue(self):
         """Показывает диалоговое окно с андроидом"""
         dialogue_window = tk.Toplevel(self.parent)
-        dialogue_window.title("Ирина Идуардовна (андроид)")
+        dialogue_window.title("Ирина Иидуардовна (андроид)")
         dialogue_window.geometry("600x450")  # Увеличил размер для фона
         dialogue_window.configure(bg='#2a1a2a')
         dialogue_window.transient(self.parent)
@@ -1364,7 +1364,7 @@ class Game:
             bg_canvas.pack(fill="both", expand=True)
             
             # Заголовок с именем
-            name_label = tk.Label(bg_canvas, text="🤖 Ирина Идуардовна 🤖",
+            name_label = tk.Label(bg_canvas, text="Ирина Иидуардовна ",
                                 font=global_fonts['large'], bg='#2a1a2a', fg='#ff99ff')
             bg_canvas.create_window(300, 40, window=name_label)
             
@@ -1431,11 +1431,11 @@ class Game:
             create_button("Далее →", self.next_dialogue_stage)
         
         elif self.dialogue_stage == 1:
-            create_message("Как ты сюда вообще смог пробраться? Охранник что, уснул?")
+            create_message("Как у тебя получилось вообще пробраться сюда...")
             create_button("Далее →", self.next_dialogue_stage)
         
         elif self.dialogue_stage == 2:
-            create_message("Чтобы пройти дальше, тебе нужно будет отгадать загадки. Иначе тебя найдет сущность...")
+            create_message("Ты хочешь уйти отсюда? Так уж и быть помогу тебе. НО сначала отгадай 3 моих загадки. НО, если ты ошибёшься... то я...")
             create_button("Начать загадки →", self.start_riddles, '#4a8a4a')
         
         elif self.dialogue_stage >= 3 and self.dialogue_stage <= 5:
@@ -1524,12 +1524,12 @@ class Game:
             check_btn.pack(pady=5)
                 
         elif self.dialogue_stage == 6:
-            create_message("А ты молодец! Не ожидала, что справишься со всеми загадками!")
+            create_message("Неплохо...Думала люди глупее, так уж и быть, вот твоя подсказка")
             self.sphinx_passed = True
             create_button("Далее →", self.next_dialogue_stage)
         
         elif self.dialogue_stage == 7:
-            create_message("Ну ладно, ищи выход дальше. Удачи!")
+            create_message("В подвале есть запасной выход, но я не знаю, где ключ... Удачи!")
             create_button("✖ Закрыть", self.dialogue_window.destroy, '#8a4a4a')
         
         # Обновляем область прокрутки
@@ -1778,7 +1778,7 @@ class Game:
         hint_bg.place(relx=0.5, rely=0.25, anchor="center")
         
         hint_label = tk.Label(hint_bg, 
-                            text="Посмотри документы и разберись,\nкакой из них является правильным титульным листом",
+                            text="В плохо освещенном кабинете на столе видны 3 листочка. \nКажется под одним одним из них должен быть ключ... \nНо какой из них правильный?...",
                             font=global_fonts['small'], bg='black', fg='#ffffff',
                             wraplength=500, justify="center")
         hint_label.pack(padx=30, pady=15)
@@ -2343,27 +2343,16 @@ class Game:
         """Справочная информация по игре"""
         help_text = """📖 СПРАВКА ПО ИГРЕ 📖     
 
-Цель игры: Найти выход из колледжа, избежав встречи с опасной сущностью.
+Добро пожаловать в нашу игру
 
-Управление:
-- Используйте кнопки для выбора действий
-- Кнопка СОХРАНИТЬ ИГРУ всегда внизу экрана
-- Вводите правильные ответы на загадки
-- Получайте важные предметы и ключи
+Студентка Оксана задержалась в колледже после занятий и столкнулась с мистической сущностью, появляющейся после семи часов вечера. Чтобы выбраться живьем, ей придется решить ряд головоломок, связанных с информационными технологиями, взаимодействуя с необычными персонажами и исследуя учебные кабинеты. Игра сочетает квестовую составляющую с элементами визуальной новеллы и юмора.
 
-Подсказки:
-1. Никогда не поворачивайте направо на первом этаже
-2. Почините систему проводов в серверной (№17)
-3. Найдите ключ от музея в компьютерном классе
-4. Решите загадки сфинкса в музее
-5. Найдите ключ от запасного выхода на третьем этаже
-6. После получения ключа от подвала, спуститесь туда со второго этажа
-7. Выходите из здания через подвал!
-
+Вам предстоит выбраться из колледжа и избежатьь страшной участи. Есть только один выход и его нужно найти
+----------
 Горячие клавиши:
-- F1 - помощь
-- Ctrl+S - быстрое сохранение
-- ESC - вернуться в главное меню
+f1 - справка
+Cntrl + s - сохранение
+Cntrl + o - начать игру с сохраненного места
 
 Удачи! 🍀"""
 
